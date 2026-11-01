@@ -166,7 +166,7 @@
     el.innerHTML = '<div class="figbox">' + sl.fig.replace('<svg', '<svg class="svgfig"') + '</div>';
     return null;
   }
-  function askBox(a) {
+  function askBox(a, l, k) {
     var d = BL.el('div', { class: 'ask' }, '<div class="q">🤔 ' + a.q + '</div>');
     var g = BL.el('div', { class: 'qchoices' }); d.appendChild(g);
     var res = BL.el('div'); d.appendChild(res);
@@ -175,7 +175,8 @@
       b.addEventListener('click', function () {
         BL.bigMark(o.ok);
         bs.forEach(function (x) { x.b.disabled = true; if (x.ok) x.b.classList.add('right'); else if (x.b === b) x.b.classList.add('wrong'); else x.b.classList.add('dim'); });
-        res.innerHTML = '<div class="verdict ' + (o.ok ? 'ok' : 'ng') + '">' + (o.ok ? '◯ 正解！' : '✕ ざんねん') + '</div><p style="margin:4px 0 0">' + a.e + '</p>';
+        var fi = l ? BL.figFor(l, a.q + ' ' + a.c[0] + ' ' + a.e, k === 0 ? 0 : -1) : -1;
+        res.innerHTML = '<div class="verdict ' + (o.ok ? 'ok' : 'ng') + '">' + (o.ok ? '◯ 正解！' : '✕ ざんねん') + '</div><p style="margin:4px 0 0">' + a.e + '</p>' + (fi >= 0 && (fi !== k || !l.slides[k].fig) ? figHTML(l.slides[fi].fig, l.slides[fi].h) : '');
         res.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       });
       return { b: b, ok: o.ok };
@@ -184,7 +185,7 @@
   }
   function renderLesson(id) {
     var l = lessonById(id); if (!l) { renderLessonMenu(); return; }
-    var N = l.slides.length, k = 0, figClean = null, showFig = false;
+    var N = l.slides.length, k = BL._jump != null && BL._jump < l.slides.length ? BL._jump : 0, figClean = null, showFig = false; BL._jump = null;
     view.innerHTML = '';
     var w = BL.el('div', { class: 'lesson' }); view.appendChild(w);
     var bar = BL.el('div', { class: 'lbar' }); w.appendChild(bar);
@@ -214,7 +215,7 @@
           var sg = BL.ui.seg(tg, '', [[false, '📖 説明'], [true, sl.sim ? '🔬 実験' : '🖼 図']], showFig, function (v) { showFig = v; g.classList.toggle('show-fig', v); });
         }
         var t = BL.el('div', { class: 'stext panel' }, '<h3>' + sl.h + '</h3>' + sl.html); g.appendChild(t);
-        if (sl.ask) t.appendChild(askBox(sl.ask));
+        if (sl.ask) t.appendChild(askBox(sl.ask, l, k));
         if (hasFig) {
           var f = BL.el('div', { class: 'sfig panel' }); g.appendChild(f); figClean = mountFig(f, sl);
           var peek = BL.el('button', { class: 'btn peek' }, sl.sim ? '🔬 実験を動かす →' : '🖼 図を見る →');
@@ -229,6 +230,7 @@
       } else {
         var box = BL.el('div', { class: 'panel testbox' }); area.appendChild(box);
         var items = BL.shuffle(l.qs.map(function (q, i) { return mcItem(l, q, i); })).slice(0, 4);
+        items.forEach(function (it) { it.inLesson = true; });
         runQuiz(box, items, { title: '確認テスト', onDone: function (score, n, el) {
           var ok = score >= 3;
           if (ok) setProg(l.id, 'pass', 1);
@@ -252,9 +254,33 @@
     draw();
   }
 
+  /* ========== 解説の図：問題に合う授業の図をさがす ========== */
+  function plain(h) { return String(h).replace(/<[^>]*>/g, ' ').replace(/[\s、。・（）()「」：:？?]+/g, ' '); }
+  function grams(t) { var g = {}; t = plain(t); for (var i = 0; i < t.length - 1; i++) { var b = t.substr(i, 2); if (!/\s/.test(b)) g[b] = (g[b] || 0) + 1; } return g; }
+  BL.figFor = function (l, text, skip) {
+    if (!l._g) { l._g = l.slides.map(function (s) { return grams(s.h + ' ' + s.html + ' ' + (s.fig || '').replace(/<[^>]*>/g, ' ')); }); l._df = {}; l._g.forEach(function (g) { for (var b in g) l._df[b] = (l._df[b] || 0) + 1; }); }
+    var qg = grams(text), best = -1, bs = 0;
+    l.slides.forEach(function (s, i) {
+      if (!s.fig || i === skip) return;
+      var sc = 0; for (var b in qg) if (l._g[i][b]) sc += Math.log(1 + l.slides.length / l._df[b]) * Math.min(qg[b], 3);
+      if (i === 0) sc *= .5;
+      if (sc > bs) { bs = sc; best = i; }
+    });
+    return best;
+  };
+  function figHTML(svgStr, cap, lessonId, idx) {
+    return '<details class="ansfig" open><summary>📊 図で確かめる' + (cap ? '<span>' + cap + '</span>' : '') + '</summary><div class="ansfig-in">' + svgStr.replace('<svg', '<svg class="svgfig"') + '</div>' + (lessonId ? '<button class="btn ansgo" data-l="' + lessonId + '" data-i="' + idx + '">📖 この授業の画面を開く</button>' : '') + '</details>';
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('.ansgo'); if (b) { BL._jump = +b.dataset.i; location.hash = '#lesson/' + b.dataset.l; } });
+  function mcFig(it) {
+    if (!it.l) return '';
+    var i = BL.figFor(it.l, it.q + ' ' + it.c[0] + ' ' + it.e);
+    return i < 0 ? '' : figHTML(it.l.slides[i].fig, it.l.slides[i].h, it.inLesson ? null : it.l.id, i);
+  }
+
   /* ========== 問題を解く（共通） ========== */
-  function mcItem(l, q, i) { return { kind: 'mc', key: l.id + ':' + i, tag: BL.SUBJ[l.subj] + ' ' + l.unit + ' ' + l.title, q: q.q, c: q.c, e: q.e }; }
-  function calcItem(c) { var g = c.gen(); return { kind: 'calc', key: 'calc:' + c.id, tag: BL.SUBJ[c.subj] + ' 計算：' + c.t, q: g.q, ans: g.ans, tol: g.tol, u: g.u, steps: g.steps }; }
+  function mcItem(l, q, i) { return { kind: 'mc', key: l.id + ':' + i, tag: BL.SUBJ[l.subj] + ' ' + l.unit + ' ' + l.title, q: q.q, c: q.c, e: q.e, l: l }; }
+  function calcItem(c) { var g = c.gen(); return { kind: 'calc', key: 'calc:' + c.id, tag: BL.SUBJ[c.subj] + ' 計算：' + c.t, q: g.q, ans: g.ans, tol: g.tol, u: g.u, steps: g.steps, fig: g.fig }; }
   function markWrong(key, wrong) {
     var w = S.get('wrong', []); var i = w.indexOf(key);
     if (wrong && i < 0) w.push(key); if (!wrong && i >= 0) w.splice(i, 1);
@@ -286,7 +312,7 @@
           var bt = BL.el('button', { class: 'qc' }, '<span class="qk">' + 'ABCD'[j] + '</span>' + BL.esc(o.c)); g.appendChild(bt);
           bt.addEventListener('click', function () {
             bs.forEach(function (x, jj) { x.disabled = true; if (os[jj].ok) x.classList.add('right'); else if (x === bt) x.classList.add('wrong'); else x.classList.add('dim'); });
-            after(o.ok, '<p class="expl">' + BL.esc(it.e) + '</p>');
+            after(o.ok, '<p class="expl">' + BL.esc(it.e) + '</p>' + mcFig(it));
           });
           return bt;
         });
@@ -304,7 +330,7 @@
           if (isNaN(v)) { inp.focus(); return; }
           chk.disabled = hbtn.disabled = inp.disabled = true; hb.innerHTML = '';
           var ok = Math.abs(v - it.ans) <= (it.tol || 0.001) + 1e-9;
-          after(ok, '<p style="margin:6px 0 2px">答え：<b style="font-family:var(--font-data);font-size:18px">' + it.ans + ' ' + (it.u || '') + '</b></p><ol class="sol">' + it.steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>');
+          after(ok, '<p style="margin:6px 0 2px">答え：<b style="font-family:var(--font-data);font-size:18px">' + it.ans + ' ' + (it.u || '') + '</b></p><ol class="sol">' + it.steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>' + (it.fig ? figHTML(it.fig, 'この問題の数字で') : ''));
         }
       }
       b.appendChild(res); b.appendChild(nx);
