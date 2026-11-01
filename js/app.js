@@ -424,6 +424,8 @@
     var g = BL.games.filter(function (x) { return x.id === id; })[0];
     if (g) { g.run(w, function () { location.hash = '#game'; }); return; }
     w.appendChild(BL.el('h2', { class: 'gtitle' }, '🎮 ゲーム'));
+    var bc = BL.el('button', { class: 'ccard bt-entry' }, '<div class="em">🏆</div><div><div class="t">クラス対戦</div><div class="d">先生の大画面で、クラス全員がスマホでいっせいに。🎯 クイズ大会（解説の図つき）と 🚀 タイムアタック対戦</div></div><span class="go">▶</span>');
+    bc.addEventListener('click', function () { location.hash = '#battle'; }); w.appendChild(bc);
     var cc = BL.el('div', { class: 'choicecards' }); w.appendChild(cc);
     BL.games.forEach(function (x) {
       var b = BL.bestOf(x.id === 'time' ? 'time' : x.id);
@@ -437,14 +439,15 @@
   function route() {
     clean();
     var h = (location.hash || '#home').slice(1).split('/'), mode = h[0] || 'home';
-    if (['home', 'see', 'lesson', 'drill', 'game'].indexOf(mode) < 0) mode = 'home';
-    document.querySelectorAll('.modes button').forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.mode === mode)); });
+    if (['home', 'see', 'lesson', 'drill', 'game', 'battle'].indexOf(mode) < 0) mode = 'home';
+    document.querySelectorAll('.modes button').forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.mode === (mode === 'battle' ? 'game' : mode))); });
     document.body.dataset.mode = mode;
     view.scrollTop = 0;
     if (mode === 'home') renderHome();
     else if (mode === 'see') renderSee(h[1]);
     else if (mode === 'lesson') { if (h[1]) renderLesson(h[1]); else renderLessonMenu(); }
     else if (mode === 'drill') renderDrill();
+    else if (mode === 'battle') { view.innerHTML = ''; var bw = BL.el('div'); view.appendChild(bw); cleanup = BL.renderBattle(bw, h) || null; }
     else renderGames(h[1]);
   }
   window.addEventListener('hashchange', route);
