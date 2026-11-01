@@ -1,6 +1,6 @@
 // 授業データのチェック：node tools/check.js
 var fs = require('fs'), path = require('path'), vm = require('vm');
-var SIMS = ['cell','enzyme','photo','dna','mitosis','sugar','immune','neuron','succession','biome','mendel','popgen','predator'];
+var SIMS = ['scale','cell','enzyme','photo','dna','mitosis','sugar','immune','neuron','succession','biome','mendel','popgen','predator'];
 var ctx = { window: {}, console: console }; ctx.window = ctx; vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/core.js'), 'utf8'), ctx);
 var dir = path.join(__dirname, '../js/data'), err = 0;

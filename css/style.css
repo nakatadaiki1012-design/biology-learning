@@ -300,6 +300,7 @@ ol.sol { margin: 6px 0 0; padding-left: 22px; font-size: 15px; }
 .org { cursor: pointer; }
 .org > .hb, .org:hover > .hb, .org.hit > .hb, .org.miss > .hb { fill: transparent; stroke: transparent; stroke-width: 16px; }
 .org > circle.hb { stroke-width: 0; }
+.org > path.hb, .org:hover > path.hb, .org.hit > path.hb, .org.miss > path.hb { fill: none; }
 .org:hover > * { stroke: var(--warm); stroke-width: 2.5; }
 .org.hit > * { stroke: var(--ok); stroke-width: 3.5; }
 .org.miss > * { stroke: var(--ng); stroke-width: 3.5; }

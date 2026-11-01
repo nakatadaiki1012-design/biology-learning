@@ -85,7 +85,7 @@
     } },
     { id: 'org', em: '🔬', name: '細胞小器官さがし', desc: '言われた小器官を細胞の図からさがしてタップ。10問のタイムを競う。', unit: '秒', low: true, run: function (el, exit) {
       var st = head(el, '🔬 細胞小器官さがし', exit), area = BL.el('div', { class: 'panel qbox' }); el.appendChild(area);
-      var Q = [['animal', ['nucleus', 'mito', 'er', 'golgi', 'ribo', 'centro', 'membrane']], ['plant', ['nucleus', 'mito', 'chloro', 'wall', 'vacuole', 'membrane', 'golgi']], ['pro', ['nucleoid', 'wall', 'ribo', 'flag', 'membrane']]];
+      var Q = [['animal', ['nucleus', 'mito', 'er', 'golgi', 'ribo', 'centro', 'membrane', 'lyso']], ['plant', ['nucleus', 'mito', 'chloro', 'wall', 'vacuole', 'membrane', 'golgi']], ['pro', ['nucleoid', 'wall', 'ribo', 'flag', 'membrane', 'plasmid']]];
       var n = 0, miss = 0, t0 = Date.now(), iv = setInterval(function () { if (!document.body.contains(st)) { clearInterval(iv); return; } st.innerHTML = '<span>' + n + '/10</span><span>' + ((Date.now() - t0) / 1000).toFixed(1) + ' 秒</span><span>ミス ' + miss + '</span>'; }, 100);
       function q() {
         if (n >= 10) { clearInterval(iv); var sec = Math.round((Date.now() - t0) / 100) / 10 + miss * 3; var nb = best('org', sec, false); endScreen(el, '細胞小器官さがし（ミス1回＝＋3秒）', sec.toFixed(1), '秒', nb, function () { el.innerHTML = ''; BL.games[1].run(el, exit); }, exit); return; }
