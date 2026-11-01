@@ -26,11 +26,11 @@
     return g + '</g>';
   }
   function ribos(pts) { return '<g class="org" data-id="ribo">' + pts.map(function (p) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.2" fill="#6b4a8a" stroke="#6b4a8a"/>'; }).join('') + '</g>'; }
-  function lab(x1, y1, x2, y2, t) { return '<g class="lab" pointer-events="none"><line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="var(--ink)" stroke-width="1"/><circle cx="' + x1 + '" cy="' + y1 + '" r="2.2" fill="var(--ink)"/><text x="' + x2 + '" y="' + (y2 + 4) + '" font-size="14" font-weight="700" fill="var(--ink)" text-anchor="' + (x2 < 260 ? 'end' : 'start') + '" paint-order="stroke" stroke="var(--panel)" stroke-width="4">' + t + '</text></g>'; }
+  function lab(x1, y1, x2, y2, t) { return '<g class="lab" pointer-events="none"><line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="var(--ink)" stroke-width="1"/><circle cx="' + x1 + '" cy="' + y1 + '" r="2.2" fill="var(--ink)"/><text x="' + x2 + '" y="' + (y2 + 4) + '" font-size="' + (BL.narrow() ? 21 : 14) + '" font-weight="700" fill="var(--ink)" text-anchor="' + (x2 < 260 ? 'end' : 'start') + '" paint-order="stroke" stroke="var(--panel)" stroke-width="4">' + t + '</text></g>'; }
 
   /* type: animal / plant / pro。labels: 名前を出すか */
   BL.cellSVG = function (type, labels) {
-    var s = '<svg class="svgfig cellsvg" viewBox="-60 0 640 400" role="img" aria-label="細胞の模式図">', L = '';
+    var s = '<svg class="svgfig cellsvg" viewBox="' + (labels && BL.narrow() ? '-190 0 900 400' : '-60 0 640 400') + '" role="img" aria-label="細胞の模式図">', L = '';
     if (type === 'animal') {
       s += '<g class="org" data-id="cyto"><ellipse cx="260" cy="200" rx="228" ry="168" fill="var(--cyto)" stroke="none"/></g>';
       s += '<g class="org" data-id="membrane"><ellipse cx="260" cy="200" rx="228" ry="168" fill="none" stroke="#c9a227" stroke-width="5"/></g>';
@@ -78,7 +78,7 @@
     pts: [[1, 'すべての細胞は細胞膜・DNA・リボソームをもつ'], [1, '原核細胞は核膜がなく、DNA は細胞質基質の中'], [0, '葉緑体は動物細胞にもある → ×（植物細胞だけ）'], [1, 'ミトコンドリアと葉緑体は独自の DNA をもつ（共生説の根拠）']],
     tasks: ['3種類の細胞をすべて見る', 'ミトコンドリアを調べる', '原核細胞にもあるものを1つ調べる'],
     mount: function (stage, ctl, api) {
-      var type = 'animal', seen = {}, lbl = true, info;
+      var type = 'animal', seen = {}, lbl = !BL.narrow(), info;
       BL.ui.seg(ctl, '細胞', [['animal', '動物'], ['plant', '植物'], ['pro', '原核（細菌）']], type, function (v) { type = v; draw(); });
       BL.ui.seg(ctl, 'ラベル', [[true, '出す'], [false, 'かくす']], lbl, function (v) { lbl = v; draw(); });
       info = BL.ui.box(ctl, 'info', '<h4>小器官をクリック</h4>図の中の部分をクリック（タップ）すると、名前とはたらきが出ます。');
@@ -110,14 +110,14 @@
     pts: [[1, '酵素は反応の前後で変化しない触媒'], [1, '高温で失活した酵素は、温度を下げてももとにもどらない'], [0, '無機触媒（酸化マンガン(IV)）も高温ではたらかなくなる → ×（温度が高いほど速い）'], [1, '基質濃度が高いとき反応速度が一定になるのは、酵素がすべて使われているから']],
     tasks: ['最適温度を見つける（反応速度 95% 以上）', '60℃以上にして失活させる', 'ペプシンで最適pHを見つける'],
     mount: function (stage, ctl, api) {
-      var e = 'amy', T = 25, pH = 7, S = 60, cmp = false;
+      var e = 'amy', T = 25, pH = 7, S = 60, cmp = false, gsel = 0;
       BL.ui.seg(ctl, '酵素', [['amy', 'アミラーゼ'], ['pep', 'ペプシン'], ['try', 'トリプシン'], ['cat', 'カタラーゼ']], e, function (v) { e = v; upd(); });
-      var sT = BL.ui.slider(ctl, { label: '温度', min: 0, max: 80, value: T, unit: '℃', on: function (v) { T = v; upd(); } });
-      var sP = BL.ui.slider(ctl, { label: 'pH', min: 0, max: 14, step: .5, value: pH, on: function (v) { pH = v; upd(); } });
-      BL.ui.slider(ctl, { label: '基質の濃さ', min: 0, max: 100, value: S, unit: '%', on: function (v) { S = v; upd(); } });
+      var sT = BL.ui.slider(ctl, { label: '温度', min: 0, max: 80, value: T, unit: '℃', on: function (v) { T = v; gsel = 0; upd(); } });
+      var sP = BL.ui.slider(ctl, { label: 'pH', min: 0, max: 14, step: .5, value: pH, on: function (v) { pH = v; gsel = 1; upd(); } });
+      BL.ui.slider(ctl, { label: '基質の濃さ', min: 0, max: 100, value: S, unit: '%', on: function (v) { S = v; gsel = 2; upd(); } });
       BL.ui.seg(ctl, '比べる', [[false, 'なし'], [true, '無機触媒も']], cmp, function (v) { cmp = v; upd(); });
       var m = BL.ui.meter(ctl, ['反応の速さ', '基質 → 生成物', '酵素のようす']);
-      var cv = BL.el('canvas', { width: 520, height: 210, style: 'width:100%;max-width:640px;border-radius:4px;background:var(--water)' });
+      var cv = BL.el('canvas', { width: 520, height: 210, style: 'width:100%;max-width:640px;border-radius:4px;background:var(--water);' + (BL.narrow() ? 'max-height:34%;object-fit:contain' : '') });
       var gwrap = BL.el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%' });
       var col = BL.el('div', { style: 'display:flex;flex-direction:column;gap:8px;width:100%;align-items:center' }); col.appendChild(cv); col.appendChild(gwrap); stage.appendChild(col);
       var ctx = cv.getContext('2d'), parts = [], enz = [], prods = [];
@@ -135,9 +135,12 @@
         for (var z = 0; z <= 100; z += 2) sp.push([z, act(T, pH, opt) * z / (25 + z) * 125]);
         var ser = [{ pts: tp, c: 'var(--accent)', label: '酵素' }];
         if (cmp) ser.push({ pts: tpi, c: 'var(--muted)', dash: '5 4', label: '無機触媒' });
-        gwrap.innerHTML = '<div>' + BL.plot({ w: 240, h: 170, x: [0, 80], y: [0, 100], xt: [0, 20, 40, 60, 80], yt: [0, 50, 100], xl: '温度（℃）', yl: '速さ', series: ser, marks: [{ x: T, y: act(T, pH, opt) * 100 }] }) + '</div>' +
-          '<div>' + BL.plot({ w: 240, h: 170, x: [0, 14], y: [0, 100], xt: [0, 2, 4, 6, 8, 10, 12, 14], yt: [0, 50, 100], xl: 'pH', yl: '速さ', series: [{ pts: pp, c: 'var(--c3)' }], marks: [{ x: pH, y: act(T, pH, opt) * 100 }] }) + '</div>' +
-          '<div>' + BL.plot({ w: 240, h: 170, x: [0, 100], y: [0, 100], xt: [0, 50, 100], yt: [0, 50, 100], xl: '基質の濃さ（%）', yl: '速さ', series: [{ pts: sp, c: 'var(--c5)' }], marks: [{ x: S, y: act(T, pH, opt) * S / (25 + S) * 125 }] }) + '</div>';
+        var gs = [BL.plot({ w: 240, h: 170, x: [0, 80], y: [0, 100], xt: [0, 20, 40, 60, 80], yt: [0, 50, 100], xl: '温度（℃）', yl: '速さ', series: ser, marks: [{ x: T, y: act(T, pH, opt) * 100 }] }),
+          BL.plot({ w: 240, h: 170, x: [0, 14], y: [0, 100], xt: [0, 2, 4, 6, 8, 10, 12, 14], yt: [0, 50, 100], xl: 'pH', yl: '速さ', series: [{ pts: pp, c: 'var(--c3)' }], marks: [{ x: pH, y: act(T, pH, opt) * 100 }] }),
+          BL.plot({ w: 240, h: 170, x: [0, 100], y: [0, 100], xt: [0, 50, 100], yt: [0, 50, 100], xl: '基質の濃さ（%）', yl: '速さ', series: [{ pts: sp, c: 'var(--c5)' }], marks: [{ x: S, y: act(T, pH, opt) * S / (25 + S) * 125 }] })];
+
+        if (BL.narrow()) { gwrap.style.gridTemplateColumns = '1fr'; gwrap.innerHTML = '<div style="max-width:290px;margin:0 auto;width:100%">' + gs[gsel].replace('viewBox="0 0 240 170"', 'viewBox="0 0 240 170"') + '</div>'; }
+        else gwrap.innerHTML = gs.map(function (g) { return '<div>' + g + '</div>'; }).join('');
       }
       var css = getComputedStyle(document.documentElement);
       function C(n) { return css.getPropertyValue(n).trim() || '#888'; }
@@ -197,7 +200,7 @@
         else if (a > 0) arrow = '<line x1="480" y1="300" x2="360" y2="200" stroke="var(--c3)" stroke-width="' + aw + '" marker-end="url(#ah)"/><text x="490" y="320" font-size="16" font-weight="700" fill="var(--c3)">CO₂ を吸収</text><line x1="230" y1="160" x2="170" y2="70" stroke="var(--accent)" stroke-width="' + Math.max(2, aw * .8) + '" marker-end="url(#ahg)"/><text x="120" y="60" font-size="15" font-weight="700" fill="var(--accent)">O₂</text>';
         else arrow = '<line x1="340" y1="200" x2="470" y2="300" stroke="var(--warm)" stroke-width="' + aw + '" marker-end="url(#aho)"/><text x="470" y="325" font-size="16" font-weight="700" fill="var(--warm)">CO₂ を放出</text>';
         var defs = '<defs><marker id="ah" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3.5" markerHeight="3.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--c3)"/></marker><marker id="ahg" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3.5" markerHeight="3.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker><marker id="aho" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3.5" markerHeight="3.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--warm)"/></marker></defs>';
-        var pic = '<svg class="svgfig" viewBox="0 0 600 340" style="max-height:260px">' + defs + '<rect width="600" height="340" fill="var(--sky)" opacity="' + (.3 + L / 150) + '"/>' + sun + leaf + arrow + '</svg>';
+        var pic = '<svg class="svgfig" viewBox="0 0 600 340" style="max-height:' + (BL.narrow() ? 120 : 260) + 'px">' + defs + '<rect width="600" height="340" fill="var(--sky)" opacity="' + (.3 + L / 150) + '"/>' + sun + leaf + arrow + '</svg>';
         var ser = [], marks = [], vls = [];
         ['sun', 'shade'].forEach(function (k) {
           var q = PL[k], pts = [];

@@ -20,7 +20,7 @@
 
   function randGene() {
     var s = 'ATG';
-    while (s.length < 18) { var c = ''; for (var j = 0; j < 3; j++) c += 'ATGC'[Math.floor(Math.random() * 4)]; if (CODON[c.replace(/T/g, 'U')] !== '*') s += c; }
+    while (s.length < (BL.narrow() ? 12 : 18)) { var c = ''; for (var j = 0; j < 3; j++) c += 'ATGC'[Math.floor(Math.random() * 4)]; if (CODON[c.replace(/T/g, 'U')] !== '*') s += c; }
     return s + BL.pick(['TAA', 'TAG', 'TGA']);
   }
   function translate(sense) {
@@ -55,7 +55,7 @@
       }
       function draw() {
         if (step === 3) api.task(0);
-        var n = seq.length, W = 40 + n * 28 + 30, s = '<svg class="svgfig" viewBox="0 0 ' + Math.max(W, 560) + ' 330" style="max-width:' + Math.max(W, 560) * 1.3 + 'px">';
+        var n = seq.length, W = 40 + n * 28 + 30, s = '<svg class="svgfig" viewBox="0 0 ' + (BL.narrow() ? W : Math.max(W, 560)) + ' 320" style="max-width:' + Math.max(W, 560) * 1.3 + 'px">';
         function base(x, y, b, hl) { return '<rect x="' + (x - 12) + '" y="' + (y - 13) + '" width="24" height="26" rx="4" fill="' + BC[b] + '"' + (hl ? ' stroke="var(--ink)" stroke-width="3"' : '') + '/><text x="' + x + '" y="' + (y + 5) + '" text-anchor="middle" font-size="15" font-weight="700" fill="#1b1b1b">' + b + '</text>'; }
         s += '<text x="6" y="34" font-size="11" fill="var(--muted)">5′</text><text x="6" y="88" font-size="11" fill="var(--muted)">3′</text>';
         s += '<text x="' + (W - 22) + '" y="34" font-size="11" fill="var(--muted)">3′</text><text x="' + (W - 22) + '" y="88" font-size="11" fill="var(--muted)">5′</text>';

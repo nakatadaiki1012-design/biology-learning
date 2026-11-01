@@ -56,7 +56,7 @@
         if (e >= 120) for (i = 0; i < 6; i++) s += tree(60 + rnd(i + 200) * 520, base, 12, 'seed');
         var shade = (100 - light(e)) / 100 * .45;
         s += '<rect y="' + (base - 60) + '" width="' + W + '" height="60" fill="#000" opacity="' + shade + '" pointer-events="none"/>';
-        s += '<text x="12" y="28" font-size="20" font-weight="800" fill="var(--ink)" font-family="var(--font-display)">' + ST[k].n + '</text><text x="12" y="50" font-size="13" fill="var(--muted)">' + (mode === 2 ? '二次遷移 ' : '') + yr + ' 年後（目安）</text>';
+        s += '<text x="12" y="28" font-size="' + (BL.narrow() ? 30 : 20) + '" font-weight="800" fill="var(--ink)" font-family="var(--font-display)">' + ST[k].n + '</text><text x="12" y="50" font-size="' + (BL.narrow() ? 20 : 13) + '" fill="var(--muted)">' + (mode === 2 ? '二次遷移 ' : '') + yr + ' 年後（目安）</text>';
         if (e >= 120) s += '<text x="' + (W - 10) + '" y="' + (base - 66) + '" text-anchor="end" font-size="12" fill="var(--ink)">林床：陰樹の芽ばえが育つ</text>';
         stage.innerHTML = s + '</svg>';
         m([ST[k].n, Math.round(light(e)) + ' %', Math.round(soil(e)) + ' %']);
@@ -118,11 +118,11 @@
         if (p > 4000 && t < 24) continue;
         grid += '<rect x="' + fx(t).toFixed(1) + '" y="' + fy(p + 50).toFixed(1) + '" width="' + ((W - L - 12) / 90 + .4).toFixed(2) + '" height="' + ((H - B - 12) / 90 + .4).toFixed(2) + '" fill="' + BIO[k].c + '" data-k="' + k + '"/>';
       }
-      var labels = [['tun', -11, 300], ['tai', -1, 700], ['sum', 7, 1400], ['lau', 15.5, 2000], ['scl', 15.5, 900], ['sub', 21.8, 2600], ['tro', 27, 3400], ['rai', 25.5, 1900], ['sav', 25, 800], ['ste', 9, 500], ['des', 22, 180]].map(function (a) { return '<text x="' + fx(a[1]) + '" y="' + fy(a[2]) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#111" paint-order="stroke" stroke="rgba(255,255,255,.6)" stroke-width="3">' + BIO[a[0]].n + '</text>'; }).join('');
+      var labels = [['tun', -11, 300], ['tai', -1, 700], ['sum', 7, 1400], ['lau', 15.5, 2000], ['scl', 15.5, 900], ['sub', 21.8, 2600], ['tro', 27, 3400], ['rai', 25.5, 1900], ['sav', 25, 800], ['ste', 9, 500], ['des', 22, 180]].map(function (a) { return '<text x="' + fx(a[1]) + '" y="' + fy(a[2]) + '" text-anchor="middle" font-size="' + (BL.narrow() ? 19 : 12) + '" font-weight="700" fill="#111" paint-order="stroke" stroke="rgba(255,255,255,.6)" stroke-width="3">' + BIO[a[0]].n + '</text>'; }).join('');
       var axes = '<line x1="' + L + '" y1="' + (H - B) + '" x2="' + (W - 12) + '" y2="' + (H - B) + '" stroke="var(--ink)"/><line x1="' + L + '" y1="12" x2="' + L + '" y2="' + (H - B) + '" stroke="var(--ink)"/>';
-      [-10, 0, 10, 20, 30].forEach(function (t) { axes += '<text x="' + fx(t) + '" y="' + (H - B + 16) + '" font-size="11" text-anchor="middle" fill="var(--muted)">' + t + '</text>'; });
-      [0, 1000, 2000, 3000, 4000].forEach(function (p) { axes += '<text x="' + (L - 6) + '" y="' + (fy(p) + 4) + '" font-size="11" text-anchor="end" fill="var(--muted)">' + p + '</text>'; });
-      axes += '<text x="' + ((L + W) / 2) + '" y="' + (H - 4) + '" font-size="12" text-anchor="middle" fill="var(--ink)">年平均気温（℃）</text><text x="6" y="10" font-size="12" fill="var(--ink)">年降水量（mm）</text>';
+      [-10, 0, 10, 20, 30].forEach(function (t) { axes += '<text x="' + fx(t) + '" y="' + (H - B + 16) + '" font-size="' + (BL.narrow() ? 17 : 11) + '" text-anchor="middle" fill="var(--muted)">' + t + '</text>'; });
+      [0, 1000, 2000, 3000, 4000].forEach(function (p) { axes += '<text x="' + (L - 6) + '" y="' + (fy(p) + 4) + '" font-size="' + (BL.narrow() ? 17 : 11) + '" text-anchor="end" fill="var(--muted)">' + p + '</text>'; });
+      axes += '<text x="' + ((L + W) / 2) + '" y="' + (H - 4) + '" font-size="' + (BL.narrow() ? 19 : 12) + '" text-anchor="middle" fill="var(--ink)">年平均気温（℃）</text><text x="6" y="10" font-size="' + (BL.narrow() ? 19 : 12) + '" fill="var(--ink)">年降水量（mm）</text>';
       function draw() {
         var k = classify(T, P), b = BIO[k];
         if (k === 'lau') api.task(0); if (k === 'des') api.task(1);

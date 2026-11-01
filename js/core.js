@@ -31,16 +31,21 @@ BL.fmt = function (v, d) { d = d == null ? 1 : d; var s = (+v).toFixed(d); retur
    o: {w,h,x:[min,max],y:[min,max],xl,yl,xt:[...],yt:[...],series:[{pts,c,dash,w,label}],marks:[{x,y,c,t}],vl:[{x,c,t}],hl:[{y,c,t}],ylog} */
 BL.plot = function (o) {
   var keys = (o.series || []).filter(function (se) { return se.label; });
-  var w = o.w || 360, h = o.h || 200, L = 44, R = 10, T = keys.length ? 40 : (o.yl ? 22 : 12), B = 34;
+  var w = o.w || 360, h = o.h || 200;
+  /* スマホでは横長のグラフを、縦にゆとりのある小さい図にかきなおす（文字が大きく見える） */
+  if (!o.k && BL.narrow() && w > 400) { h = Math.round(Math.max(h * .8, 240)); w = 400; }
+  /* スマホでは図が縮むので、文字と線を太くする（k 倍） */
+  var k = o.k || (BL.narrow() ? Math.min(2.2, Math.max(1, w / (Math.min(innerWidth, 760) - 48) * .95)) : 1);
+  var L = 44 * k, R = 10, T = (keys.length ? 40 : (o.yl ? 22 : 12)) * k, B = 34 * k;
   var X0 = o.x[0], X1 = o.x[1], Y0 = o.y[0], Y1 = o.y[1];
   function fy(y) { if (o.ylog) { y = Math.log10(Math.max(y, Y0)); return T + (h - T - B) * (1 - (y - Math.log10(Y0)) / (Math.log10(Y1) - Math.log10(Y0))); } return T + (h - T - B) * (1 - (y - Y0) / (Y1 - Y0)); }
   function fx(x) { return L + (w - L - R) * (x - X0) / (X1 - X0); }
   var s = '<svg class="svgfig" viewBox="0 0 ' + w + ' ' + h + '" role="img">';
   s += '<rect x="' + L + '" y="' + T + '" width="' + (w - L - R) + '" height="' + (h - T - B) + '" fill="none" stroke="var(--line)"/>';
   (o.yt || []).forEach(function (t) { var yy = fy(t); s += '<line x1="' + L + '" x2="' + (w - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="var(--line)" stroke-dasharray="2 3"/><text x="' + (L - 4) + '" y="' + (yy + 4) + '" font-size="11" text-anchor="end" fill="var(--muted)">' + t + '</text>'; });
-  (o.xt || []).forEach(function (t) { var xx = fx(t); s += '<line x1="' + xx + '" x2="' + xx + '" y1="' + (h - B) + '" y2="' + (h - B + 4) + '" stroke="var(--muted)"/><text x="' + xx + '" y="' + (h - B + 15) + '" font-size="11" text-anchor="middle" fill="var(--muted)">' + t + '</text>'; });
+  (o.xt || []).forEach(function (t) { var xx = fx(t); s += '<line x1="' + xx + '" x2="' + xx + '" y1="' + (h - B) + '" y2="' + (h - B + 4) + '" stroke="var(--muted)"/><text x="' + xx + '" y="' + (h - B + 15 * k) + '" font-size="11" text-anchor="middle" fill="var(--muted)">' + t + '</text>'; });
   if (o.xl) s += '<text x="' + ((L + w - R) / 2) + '" y="' + (h - 3) + '" font-size="11.5" text-anchor="middle" fill="var(--ink)">' + o.xl + '</text>';
-  if (o.yl) s += '<text x="4" y="' + (keys.length ? 13 : T - 6) + '" font-size="11.5" fill="var(--ink)">' + o.yl + '</text>';
+  if (o.yl) s += '<text x="4" y="' + (keys.length ? 13 * k : T - 6 * k) + '" font-size="11.5" fill="var(--ink)">' + o.yl + '</text>';
   (o.hl || []).forEach(function (l) { var yy = fy(l.y); s += '<line x1="' + L + '" x2="' + (w - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="' + (l.c || 'var(--muted)') + '" stroke-dasharray="5 4"/>' + (l.t ? '<text x="' + (w - R - 3) + '" y="' + (yy - 3) + '" font-size="11" text-anchor="end" fill="' + (l.c || 'var(--muted)') + '">' + l.t + '</text>' : ''); });
   (o.vl || []).forEach(function (l) { var xx = fx(l.x); s += '<line x1="' + xx + '" x2="' + xx + '" y1="' + T + '" y2="' + (h - B) + '" stroke="' + (l.c || 'var(--muted)') + '" stroke-dasharray="5 4"/>' + (l.t ? '<text x="' + (xx + 3) + '" y="' + (T + 11) + '" font-size="11" fill="' + (l.c || 'var(--muted)') + '">' + l.t + '</text>' : ''); });
   s += '<g clip-path="none">';
@@ -51,9 +56,11 @@ BL.plot = function (o) {
   });
   s += '</g>';
   (o.marks || []).forEach(function (m) { var xx = fx(m.x), yy = Math.min(h - B, Math.max(T, fy(m.y))); s += '<circle cx="' + xx + '" cy="' + yy + '" r="5" fill="' + (m.c || 'var(--warm)') + '" stroke="var(--panel)" stroke-width="1.5"/>' + (m.t ? '<text x="' + (xx + 7) + '" y="' + (yy - 6) + '" font-size="11.5" font-weight="700" fill="' + (m.c || 'var(--warm)') + '">' + m.t + '</text>' : ''); });
-  if (keys.length) { var kx = L; s += keys.map(function (se) { var t = '<line x1="' + kx + '" x2="' + (kx + 16) + '" y1="' + (T - 11) + '" y2="' + (T - 11) + '" stroke="' + se.c + '" stroke-width="3"' + (se.dash ? ' stroke-dasharray="' + se.dash + '"' : '') + '/><text x="' + (kx + 20) + '" y="' + (T - 7) + '" font-size="11.5" fill="var(--ink)">' + se.label + '</text>'; kx += 30 + se.label.length * 12; return t; }).join(''); }
+  if (keys.length) { var kx = L; s += keys.map(function (se) { var t = '<line x1="' + kx + '" x2="' + (kx + 16 * k) + '" y1="' + (T - 11 * k) + '" y2="' + (T - 11 * k) + '" stroke="' + se.c + '" stroke-width="3"' + (se.dash ? ' stroke-dasharray="' + se.dash + '"' : '') + '/><text x="' + (kx + 20) + '" y="' + (T - 7) + '" font-size="11.5" fill="var(--ink)">' + se.label + '</text>'; kx += (30 + se.label.length * 12) * k; return t; }).join(''); }
+  if (k !== 1) s = s.replace(/font-size="([\d.]+)"/g, function (m, v) { return 'font-size="' + (v * k).toFixed(1) + '"'; }).replace(/stroke-width="([\d.]+)"/g, function (m, v) { return 'stroke-width="' + (v * Math.sqrt(k)).toFixed(1) + '"'; }).replace(/ r="5"/g, ' r="' + (5 * k).toFixed(1) + '"');
   return s + '</svg>';
 };
+BL.narrow = function () { return window.innerWidth < 760; };
 
 /* 操作パネルの部品 */
 BL.ui = {
