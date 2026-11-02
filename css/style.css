@@ -427,7 +427,7 @@ ol.sol { margin: 6px 0 0; padding-left: 22px; font-size: 15px; }
 .bt-wait { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .bt-wait h3 { margin: 0; }
 .bt-names { display: flex; flex-wrap: wrap; gap: 8px; min-height: 120px; align-content: flex-start; }
-.bt-name { padding: 6px 14px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 18px; animation: pop .35s; }
+.bt-name { border: 0; cursor: pointer; padding: 6px 14px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 18px; animation: pop .35s; }
 .bt-info { display: flex; gap: 6px; flex-wrap: wrap; }
 .bt-qh { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .bt-sec { margin-left: auto; font: 800 30px var(--font-data); color: var(--warm); min-width: 2ch; text-align: right; }
@@ -533,3 +533,7 @@ ol.pkey li { margin-bottom: 6px; }
   .print { border: 0; padding: 0; max-width: none; }
   .pbreak { break-before: page; }
 }
+.weak { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
+.weak h3 { margin: 0 0 6px; font-size: 14px; }
+.wrow { display: grid; grid-template-columns: minmax(0, 1fr) 50px 2.6em auto; gap: 8px; align-items: center; font-size: 14px; padding: 3px 0; }
+.wrow .bar { margin: 0; }

@@ -328,6 +328,7 @@
         BL.bigMark(ok);
         if (ok) { score++; streak++; } else { streak = 0; wrongs.push(it); }
         markWrong(it.key, !ok);
+        var lid = it.l ? it.l.id : it.key, qs2 = S.get('qstat', {}), st2 = qs2[lid] || [0, 0]; st2[0] += ok ? 1 : 0; st2[1]++; qs2[lid] = st2; S.set('qstat', qs2);
         res.innerHTML = '<div class="verdict ' + (ok ? 'ok' : 'ng') + '">' + (ok ? '◯ 正解！' + (streak >= 3 ? '　🔥 ' + streak + ' 連続！' : '') : '✕ ざんねん') + '</div>' + html;
         var nb = BL.ui.btn(nx, n + 1 < items.length ? '次の問題 →' : '結果を見る →', function () { n++; q(); }, 'main big'); nb.focus({ preventScroll: true });
         setTimeout(function () { nx.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 50);
@@ -412,6 +413,17 @@
     var go = BL.el('div', { class: 'row', style: 'margin-top:12px' }); side.appendChild(go);
     BL.ui.btn(go, '▶ スタート', start, 'main big wide');
     main.innerHTML = '<div class="qbox drill-intro"><div class="em">' + (type === 'mc' ? '📝' : type === 'calc' ? '🧮' : '🔁') + '</div><h3>' + (type === 'mc' ? '4択問題' : type === 'calc' ? '計算問題' : '復習') + '</h3><p>' + (type === 'mc' ? '範囲をえらんで「スタート」。答えると すぐに解説が出ます。' : type === 'calc' ? '答えを数字で入力。わからないときは「ヒント」で解き方を 1 行ずつ。' : 'これまでにまちがえた問題（4択・計算）をもう一度。') + '</p><p class="note">生物基礎 ' + BL.lessons.filter(function (l) { return l.subj === 'kiso'; }).length * 10 + ' 問・生物 ' + BL.lessons.filter(function (l) { return l.subj === 'bio'; }).length * 10 + ' 問・計算 ' + BL.calcs.length + ' 種類</p></div>';
+    if (type === 'mc') {
+      var qst = S.get('qstat', {}), weak = BL.lessons.filter(function (l) { return l.subj === subj && qst[l.id] && qst[l.id][1] >= 3; }).map(function (l) { return [l, qst[l.id][0] / qst[l.id][1]]; }).filter(function (x) { return x[1] < .8; }).sort(function (a, b) { return a[1] - b[1]; }).slice(0, 3);
+      if (weak.length) {
+        var wb = BL.el('div', { class: 'weak' }, '<h3>📉 苦手チェック（正答率が低い単元）</h3>'); side.appendChild(wb);
+        weak.forEach(function (x) {
+          var row = BL.el('div', { class: 'wrow' }, '<span>' + x[0].unit + ' ' + x[0].title + '</span><i class="bar"><i style="width:' + Math.round(x[1] * 100) + '%;background:' + (x[1] < .6 ? 'var(--warm)' : 'var(--accent)') + '"></i></i><b>' + Math.round(x[1] * 100) + '%</b>');
+          var b = BL.el('button', { class: 'btn' }, '練習'); b.onclick = function () { sel = {}; sel[x[0].id] = true; S.set('drillSel', sel); start(); };
+          row.appendChild(b); wb.appendChild(row);
+        });
+      }
+    }
     function start() {
       var items = [];
       if (type === 'mc') {

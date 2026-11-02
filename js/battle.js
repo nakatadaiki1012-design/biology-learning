@@ -183,7 +183,7 @@
       } else if (r.state === 'closed') stage.innerHTML = '<p>この部屋は閉じました。</p>';
     }
     function update(r, list) {
-      if (r.state === 'lobby') { var el = stage.querySelector('.bt-names'); if (el) el.innerHTML = list.length ? list.map(function (p) { return '<span class="bt-name">' + esc(p.n) + '</span>'; }).join('') : '<span class="note">待っています…</span>'; }
+      if (r.state === 'lobby') { var el = stage.querySelector('.bt-names'); if (el) { el.innerHTML = list.length ? list.map(function (p) { return '<button class="bt-name" data-pid="' + p.id + '" title="タップで退出させる">' + esc(p.n) + '</button>'; }).join('') : '<span class="note">待っています…</span>'; el.querySelectorAll('[data-pid]').forEach(function (b) { b.onclick = function () { if (confirm('「' + b.textContent + '」を部屋から退出させますか？（名前を入れなおしてもらいます）')) api('DELETE', rpath(code) + '/players/' + b.dataset.pid); }; }); } }
       if (r.state === 'q') { var a = stage.querySelector('.bt-ans'); if (a) a.textContent = Object.keys((r.ans || {})[r.qi] || {}).length + ' / ' + list.length + ' 人が回答'; }
       if (r.state === 'play') { var lv = stage.querySelector('.bt-live'); if (lv) lv.innerHTML = board(list, null, r.cfg.top || 10); }
     }
@@ -214,7 +214,7 @@
   function join(view, code) {
     var m = location.hash.match(/\?db=([^&]+)/); if (m) S.set('battleDb', decodeURIComponent(m[1]));
     if (!base()) { view.innerHTML = '<div class="battle"><p>データベースが設定されていません。</p></div>'; return; }
-    var name = S.get('battleName', ''), stop = null, room = null, last = '', timers = [], me = pid();
+    var name = S.get('battleName', ''), stop = null, room = null, last = '', timers = [], me = pid(), joinedOnce = false;
     function ask() {
       view.innerHTML = '<div class="battle bt-joinf"><section class="panel bt-card"><div class="em">📱</div><h3>部屋 ' + code + ' に参加</h3><div class="bt-fld"><input id="nm" maxlength="12" placeholder="なまえ（ニックネーム）" value="' + esc(name) + '"><button class="btn main big" id="ng">参加 →</button></div><p class="note">ほかの人に見えるので、本名でなくてもOK</p></section></div>';
       var inp = view.querySelector('#nm'); inp.focus();
@@ -230,6 +230,8 @@
           stop = listen(rpath(code), function (r) {
             room = r; if (!r) return;
             var mine = (r.players || {})[me];
+            if (!mine && r.state === 'lobby' && joinedOnce) { if (stop) stop(); stop = null; last = ''; S.set('battleJoined', ''); name = ''; alert('先生が名前を消しました。名前を入れなおしてください。'); ask(); return; }
+            if (mine) joinedOnce = true;
             view.querySelector('.bt-myscore').textContent = (mine ? mine.s || 0 : 0) + ' 点';
             var key = r.state + ':' + r.qi + ':' + (r.qAt || '') + ':' + (r.startAt || '') + ':' + (r.cfg && r.cfg.seed);
             if (key !== last) { last = key; timers.forEach(function (f) { f(); }); timers = []; draw(r); }
