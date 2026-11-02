@@ -494,3 +494,42 @@ body.offline .bt-top::after { content: "📡 つながりを確認中…"; color
   .bt-dist { height: 140px; }
   .bt-dist span { font-size: 11px; }
 }
+
+/* 用語さがし */
+.search { position: relative; }
+.search input { width: 100%; font-size: 15px; padding: 9px 12px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--panel); }
+.sresults { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); background: var(--panel); border: 1.5px solid var(--ink); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.18); max-height: 60vh; overflow-y: auto; }
+.sres { width: 100%; display: flex; gap: 10px; align-items: center; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 8px 12px; }
+.sres:hover { background: var(--chip); }
+.sres .sk { font-size: 18px; flex: none; }
+.sres b { display: block; font-size: 15px; }
+.sres small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.sres .sl2 { margin-left: auto; flex: none; font-size: 11.5px; color: var(--accent); font-weight: 700; }
+
+/* 印刷用 */
+.print { max-width: 900px; width: 100%; margin: 0 auto; background: var(--panel); padding: 20px 26px; border: 1px solid var(--line); }
+.print h1 { font-family: var(--font-display); font-size: 24px; margin: 6px 0 2px; }
+.print h2 { font-family: var(--font-display); font-size: 17px; margin: 0 0 6px; border-bottom: 1.5px solid var(--ink); }
+.pslide { margin: 14px 0; break-inside: avoid; }
+.pbody { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; font-size: 14px; line-height: 1.7; }
+.pbody p { margin: 0 0 6px; }
+.pfig svg { width: 100%; height: auto; max-height: 300px; }
+.pask { border: 1px dashed var(--ask); padding: 6px 8px; margin-top: 6px; }
+ol.pqs > li { margin-bottom: 10px; break-inside: avoid; }
+ol.pch { list-style: none; padding: 0; margin: 4px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; }
+ol.pkey li { margin-bottom: 6px; }
+.prbtn { flex: none; margin-left: auto; }
+@media (max-width: 760px) { .pbody { grid-template-columns: minmax(0, 1fr); } .print { padding: 12px; } }
+@media print {
+  :root, :root[data-theme], :root:not([data-theme="light"]) {
+  --bg: #f1ede4; --panel: #fbf9f4; --glass: rgba(251, 249, 244, .95); --ink: #24282b; --muted: #6d6b63; --line: #d6d0c2; --chip: #ebe6da;
+  --accent: #3b7a3a; --accent-ink: #fbf9f4; --warm: #b8502c; --ask: #1c74d0; --ok: #3b7a3a; --ng: #b8502c; --stamp: #c0392b;
+  --c1: #c0392b; --c2: #e08aa0; --c3: #2f5f9e; --c4: #7fb2e5; --c5: #d08a1e; --c6: #7a4fa0;
+  --leaf: #6fa35a; --leaf2: #2f6b3a; --soil: #8a6a4a; --sky: #e3eef2; --water: #cfe3ee; --cyto: #fdf3df; --nuc: #e8dcf4;
+  }
+  html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
+  body::before, .top, .noprint, .toast, .bigmark { display: none !important; }
+  #view { overflow: visible !important; padding: 0 !important; display: block !important; }
+  .print { border: 0; padding: 0; max-width: none; }
+  .pbreak { break-before: page; }
+}

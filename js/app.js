@@ -42,6 +42,7 @@
     view.innerHTML = '';
     var w = BL.el('div', { class: 'home' }); view.appendChild(w);
     w.innerHTML = '<div class="hero"><svg viewBox="0 0 64 64" class="hero-ic" aria-hidden="true"><ellipse cx="32" cy="32" rx="28" ry="22" fill="var(--cyto)" stroke="var(--accent)" stroke-width="3"/><circle cx="27" cy="30" r="9" fill="var(--nuc)" stroke="#6b4a8a" stroke-width="2"/><ellipse cx="45" cy="38" rx="7" ry="4" fill="#f3b38a" stroke="#a0522d"/><ellipse cx="42" cy="22" rx="6" ry="3.5" fill="var(--leaf)"/></svg><div><h2>生物ラボ</h2><p>生物基礎・生物を、動かして・授業で・問題で・ゲームで。</p></div></div>';
+    w.appendChild(searchBox());
     var tiles = BL.el('div', { class: 'tiles' }); w.appendChild(tiles);
     [['see', '🔬', '見る', simN + ' / ' + BL.sims.length + ' 実験クリア', simN / BL.sims.length],
      ['lesson', '📖', '授業', pass + ' / ' + BL.lessons.length + ' 合格', pass / BL.lessons.length],
@@ -60,6 +61,31 @@
       el.innerHTML = '<div class="qbox" style="text-align:center"><b>' + (sc ? '◯ 正解！ また明日の1問もどうぞ' : '✕ 解説を読んで、授業で確かめよう') + '</b><div class="row" style="justify-content:center;margin-top:8px"></div></div>';
       var r = el.querySelector('.row'); BL.ui.btn(r, '📖 この授業へ', function () { location.hash = '#lesson/' + pick[0].id; }, 'main'); BL.ui.btn(r, '✏️ 演習をする', function () { location.hash = '#drill'; });
     } });
+  }
+
+  /* 用語さがし（用語・授業の名前・実験から） */
+  function searchBox() {
+    var box = BL.el('div', { class: 'search' }), inp = BL.el('input', { type: 'search', placeholder: '🔎 用語・キーワードでさがす（例：ミトコンドリア、インスリン）', 'aria-label': '用語をさがす' }), out = BL.el('div', { class: 'sresults', hidden: '' });
+    box.appendChild(inp); box.appendChild(out);
+    var idx = [];
+    BL.lessons.forEach(function (l) {
+      idx.push({ t: l.title, d: l.lead, l: l, k: 'lesson' });
+      l.terms.forEach(function (x) { idx.push({ t: x.w, d: x.d, l: l, k: 'term' }); });
+    });
+    BL.sims.forEach(function (sm) { idx.push({ t: sm.name, d: sm.lead, sim: sm, k: 'sim' }); });
+    function slideOf(l, w) { for (var i = 0; i < l.slides.length; i++) if ((l.slides[i].h + l.slides[i].html).indexOf(w) >= 0) return i; return 0; }
+    inp.addEventListener('input', function () {
+      var q = inp.value.trim(); if (!q) { out.hidden = true; return; }
+      var hits = idx.map(function (x) { var sc = x.t === q ? 100 : x.t.indexOf(q) === 0 ? 60 : x.t.indexOf(q) >= 0 ? 40 : x.d.indexOf(q) >= 0 ? 10 : 0; return [sc ? sc + (x.k === 'term' ? 2 : 0) : 0, x]; }).filter(function (a) { return a[0] > 0; }).sort(function (a, b) { return b[0] - a[0]; }).slice(0, 10);
+      out.hidden = false;
+      out.innerHTML = hits.length ? '' : '<div class="note" style="padding:8px">見つかりませんでした</div>';
+      hits.forEach(function (h) {
+        var x = h[1], b = BL.el('button', { class: 'sres' }, '<span class="sk">' + (x.k === 'sim' ? '🔬' : x.k === 'lesson' ? '📖' : '🏷') + '</span><span><b>' + BL.esc(x.t) + '</b><small>' + BL.esc(x.d) + '</small></span><span class="sl2">' + (x.l ? BL.SUBJ[x.l.subj] + ' ' + x.l.unit : '見る') + '</span>');
+        b.addEventListener('click', function () { if (x.sim) location.hash = '#see/' + x.sim.id; else { BL._jump = x.k === 'term' ? slideOf(x.l, x.t) : 0; location.hash = '#lesson/' + x.l.id; } });
+        out.appendChild(b);
+      });
+    });
+    return box;
   }
 
   /* ========== 見る ========== */
@@ -191,6 +217,7 @@
     var bar = BL.el('div', { class: 'lbar' }); w.appendChild(bar);
     var back = BL.ui.btn(bar, '←', function () { location.hash = '#lesson'; }); back.setAttribute('aria-label', '授業の一覧へ'); back.title = '授業の一覧';
     bar.appendChild(BL.el('h2', {}, '<span class="eyebrow">' + BL.SUBJ[l.subj] + ' ' + l.unit + '</span>' + l.title));
+    var pr = BL.ui.btn(bar, '🖨', function () { location.hash = '#print/' + l.id; }); pr.title = '印刷用（プリント）'; pr.setAttribute('aria-label', '印刷用のページ'); pr.classList.add('prbtn');
     var dots = BL.el('div', { class: 'dots' }); w.appendChild(dots);
     var area = BL.el('div', { class: 'larea' }); w.appendChild(area);
     var nav = BL.el('div', { class: 'lnav' }); w.appendChild(nav);
@@ -435,21 +462,46 @@
     });
   }
 
+  /* ========== 印刷用（プリント） ========== */
+  function renderPrint(id) {
+    var l = lessonById(id); if (!l) { renderLessonMenu(); return; }
+    var abc = 'ABCD', key = [];
+    var qs = l.qs.map(function (q, i) { var ord = BL.shuffle([0, 1, 2, 3]); key.push(abc[ord.indexOf(0)]); return '<li><div>' + BL.esc(q.q) + '</div><ol class="pch">' + ord.map(function (o, j) { return '<li><b>' + abc[j] + '</b> ' + BL.esc(q.c[o]) + '</li>'; }).join('') + '</ol></li>'; }).join('');
+    view.innerHTML = '<div class="print"><div class="noprint row"><button class="btn" onclick="history.back()">← もどる</button><button class="btn main big" onclick="window.print()">🖨 印刷する</button><span class="note">A4・縦向きがおすすめ。図もそのまま印刷されます。</span></div>' +
+      '<h1>' + BL.SUBJ[l.subj] + ' ' + l.unit + '　' + l.title + '</h1><p class="note">' + l.lead + '　　年　　組　　番　名前＿＿＿＿＿＿＿＿</p>' +
+      l.slides.map(function (sl, i) { return '<section class="pslide"><h2>' + (i + 1) + '. ' + sl.h + '</h2><div class="pbody"><div class="ptext">' + sl.html + (sl.ask ? '<div class="pask">🤔 ' + sl.ask.q + '<br>' + BL.shuffle(sl.ask.c).map(function (c) { return '□ ' + c; }).join('　') + '</div>' : '') + '</div>' + (sl.fig ? '<div class="pfig">' + sl.fig.replace('<svg', '<svg class="svgfig"') + '</div>' : sl.sim ? '<div class="pfig note">（アプリの「見る」で実験：' + (simById(sl.sim) || {}).name + '）</div>' : '') + '</div></section>'; }).join('') +
+      '<section class="pslide"><h2>テスト・入試に出るポイント</h2><ul>' + l.exam.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul><h2>用語</h2><table class="tbl">' + l.terms.map(function (x) { return '<tr><th>' + x.w + '</th><td>' + x.d + '</td></tr>'; }).join('') + '</table></section>' +
+      '<section class="pslide pbreak"><h2>確認問題（' + l.qs.length + ' 問）</h2><ol class="pqs">' + qs + '</ol></section>' +
+      '<section class="pslide pbreak"><h2>解答と解説</h2><ol class="pkey">' + l.qs.map(function (q, i) { return '<li><b>' + key[i] + '</b>　' + BL.esc(q.c[0]) + '<br><small>' + BL.esc(q.e) + '</small></li>'; }).join('') + '</ol></section></div>';
+  }
+
   /* ========== 切りかえ ========== */
   function route() {
     clean();
     var h = (location.hash || '#home').slice(1).split('/'), mode = h[0] || 'home';
-    if (['home', 'see', 'lesson', 'drill', 'game', 'battle'].indexOf(mode) < 0) mode = 'home';
-    document.querySelectorAll('.modes button').forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.mode === (mode === 'battle' ? 'game' : mode))); });
+    if (['home', 'see', 'lesson', 'drill', 'game', 'battle', 'print'].indexOf(mode) < 0) mode = 'home';
+    document.querySelectorAll('.modes button').forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.mode === (mode === 'battle' ? 'game' : mode === 'print' ? 'lesson' : mode))); });
     document.body.dataset.mode = mode;
     view.scrollTop = 0;
     if (mode === 'home') renderHome();
     else if (mode === 'see') renderSee(h[1]);
     else if (mode === 'lesson') { if (h[1]) renderLesson(h[1]); else renderLessonMenu(); }
     else if (mode === 'drill') renderDrill();
+    else if (mode === 'print') renderPrint(h[1]);
     else if (mode === 'battle') { view.innerHTML = ''; var bw = BL.el('div'); view.appendChild(bw); cleanup = BL.renderBattle(bw, h) || null; }
     else renderGames(h[1]);
   }
+  /* キーボードで答える：1〜4（A〜D）で選択、Enter で次へ */
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || /INPUT|SELECT|TEXTAREA/.test((e.target.tagName || ''))) return;
+    var k = '1234'.indexOf(e.key); if (k < 0) k = 'abcd'.indexOf(String(e.key).toLowerCase());
+    if (k >= 0) {
+      var groups = view.querySelectorAll('.qchoices, .bt-choices');
+      for (var i = 0; i < groups.length; i++) { var bs = groups[i].querySelectorAll('button'); if (bs.length && !bs[0].disabled && groups[i].offsetParent) { if (bs[k]) { e.preventDefault(); bs[k].click(); } return; } }
+    } else if (e.key === 'Enter') {
+      var nb = view.querySelector('.qnext button'); if (nb && document.activeElement !== nb) { e.preventDefault(); nb.click(); }
+    }
+  });
   window.addEventListener('hashchange', route);
   route();
 })();

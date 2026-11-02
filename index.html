@@ -8,7 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#3b7a3a">
+<link rel="stylesheet" href="css/style.css?v=5320d472">
 </head>
 <body>
 <header class="top">
@@ -24,20 +28,21 @@
 </header>
 <main id="view"></main>
 
-<script src="js/core.js"></script>
-<script src="js/sims-cellview.js"></script>
-<script src="js/sims-cell.js"></script>
-<script src="js/sims-gene.js"></script>
-<script src="js/sims-body.js"></script>
-<script src="js/sims-eco.js"></script>
-<script src="js/data/kiso-1.js"></script>
-<script src="js/data/kiso-2.js"></script>
-<script src="js/data/bio-1.js"></script>
-<script src="js/data/bio-2.js"></script>
-<script src="js/calc.js"></script>
-<script src="js/games.js"></script>
-<script src="js/config.js"></script>
-<script src="js/battle.js"></script>
-<script src="js/app.js"></script>
+<script src="js/core.js?v=eb1101f0"></script>
+<script src="js/sims-cellview.js?v=688caf41"></script>
+<script src="js/sims-cell.js?v=a06f3822"></script>
+<script src="js/sims-gene.js?v=35fcc6c0"></script>
+<script src="js/sims-body.js?v=06ecd512"></script>
+<script src="js/sims-eco.js?v=4667c70d"></script>
+<script src="js/data/kiso-1.js?v=a9cd4c67"></script>
+<script src="js/data/kiso-2.js?v=a95ff4ec"></script>
+<script src="js/data/bio-1.js?v=c13f763f"></script>
+<script src="js/data/bio-2.js?v=6998a679"></script>
+<script src="js/calc.js?v=798c2700"></script>
+<script src="js/games.js?v=5ca77aa1"></script>
+<script src="js/config.js?v=5d5bf170"></script>
+<script src="js/battle.js?v=f3a154e2"></script>
+<script src="js/app.js?v=3837e8df"></script>
+<script>if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });</script>
 </body>
 </html>
