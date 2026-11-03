@@ -94,6 +94,36 @@
     if (T < 24) return P > 1800 ? 'sub' : P > 1200 ? 'rai' : P > 500 ? 'sav' : 'des';
     return P > 2500 ? 'tro' : P > 1300 ? 'rai' : 'sav';
   }
+
+  /* バイオームの景色（その植生の木・草のかたち） */
+  function landscape(k) {
+    var W = 400, H = 150, G = 118, s = '', rnd2 = function (i) { var x = Math.sin(i * 91.7 + k.length * 13) * 1e4; return x - Math.floor(x); };
+    var sky = { tro: ['#9fd3c7', '#e8f4ea'], sub: ['#a8d8ea', '#eef8f0'], lau: ['#b9d7ea', '#eef4ea'], sum: ['#bcdcf0', '#f2f6e8'], tai: ['#c3d3e0', '#eef2f2'], tun: ['#d4dde6', '#f4f6f8'], scl: ['#bfe0f2', '#fbf3df'], rai: ['#c8e0ea', '#f6f1dc'], sav: ['#f3d9a6', '#fbf0d8'], ste: ['#cfe3f0', '#f5f0dc'], des: ['#f6d9a0', '#fdf2dc'] }[k];
+    var gr = { tro: '#3f6b34', sub: '#4d7a3a', lau: '#56743c', sum: '#6c8a46', tai: '#5b6b4a', tun: '#9aa58a', scl: '#b6a26a', rai: '#a59a5a', sav: '#c9b06a', ste: '#b8b878', des: '#e3c48a' }[k];
+    s += '<defs><linearGradient id="bsky' + k + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + sky[0] + '"/><stop offset="1" stop-color="' + sky[1] + '"/></linearGradient></defs><rect width="' + W + '" height="' + H + '" fill="url(#bsky' + k + ')"/>';
+    if (k === 'des') s += '<circle cx="330" cy="30" r="16" fill="#f7c948"/>';
+    if (k === 'tun') s += '<path d="M0 70 L60 40 L110 66 L170 30 L240 70 L300 44 L400 72 V' + G + ' H0Z" fill="#e9eef3"/>';
+    s += '<path d="M0 ' + G + ' Q100 ' + (G - 6) + ' 200 ' + G + ' T400 ' + G + ' V' + H + ' H0Z" fill="' + gr + '"/>';
+    function broad(x, h, c, dark) { return '<rect x="' + (x - 2.5) + '" y="' + (G - h * .45) + '" width="5" height="' + h * .45 + '" fill="#6b4a2a"/><ellipse cx="' + x + '" cy="' + (G - h * .62) + '" rx="' + h * .33 + '" ry="' + h * .3 + '" fill="' + c + '"/><ellipse cx="' + (x - h * .12) + '" cy="' + (G - h * .7) + '" rx="' + h * .16 + '" ry="' + h * .13 + '" fill="' + (dark || c) + '" opacity=".7"/>'; }
+    function conifer(x, h, c) { return '<rect x="' + (x - 2) + '" y="' + (G - h * .2) + '" width="4" height="' + h * .2 + '" fill="#5a3a20"/><path d="M' + x + ' ' + (G - h) + ' L' + (x + h * .2) + ' ' + (G - h * .55) + ' L' + (x + h * .12) + ' ' + (G - h * .55) + ' L' + (x + h * .26) + ' ' + (G - h * .15) + ' L' + (x - h * .26) + ' ' + (G - h * .15) + ' L' + (x - h * .12) + ' ' + (G - h * .55) + ' L' + (x - h * .2) + ' ' + (G - h * .55) + 'Z" fill="' + c + '"/>'; }
+    function grass(x, h, c) { var t = ''; for (var i = -2; i <= 2; i++) t += '<path d="M' + x + ' ' + G + ' q' + (i * 2) + ' -' + h * .6 + ' ' + (i * 4) + ' -' + h + '" stroke="' + c + '" stroke-width="1.6" fill="none"/>'; return t; }
+    function acacia(x, h) { return '<path d="M' + x + ' ' + G + ' L' + x + ' ' + (G - h * .6) + ' M' + x + ' ' + (G - h * .5) + ' L' + (x - h * .25) + ' ' + (G - h * .8) + ' M' + x + ' ' + (G - h * .55) + ' L' + (x + h * .25) + ' ' + (G - h * .82) + '" stroke="#5a3a20" stroke-width="3" fill="none"/><ellipse cx="' + x + '" cy="' + (G - h * .85) + '" rx="' + h * .5 + '" ry="' + h * .12 + '" fill="#6f8a3a"/>'; }
+    function cactus(x, h) { return '<path d="M' + x + ' ' + G + ' V' + (G - h) + ' M' + x + ' ' + (G - h * .5) + ' h-' + h * .25 + ' v-' + h * .25 + ' M' + x + ' ' + (G - h * .65) + ' h' + h * .22 + ' v-' + h * .2 + '" stroke="#4f8a3a" stroke-width="' + h * .16 + '" stroke-linecap="round" fill="none"/>'; }
+    function fern(x, h) { var t = '<path d="M' + x + ' ' + G + ' V' + (G - h) + '" stroke="#6b4a2a" stroke-width="4"/>'; for (var i = 0; i < 7; i++) { var a = i / 7 * Math.PI - Math.PI; t += '<path d="M' + x + ' ' + (G - h) + ' q' + Math.cos(a) * h * .3 + ' ' + (Math.sin(a) * h * .1 - 4) + ' ' + Math.cos(a) * h * .45 + ' ' + (Math.sin(a) * h * .25 + 6) + '" stroke="#3f7a3a" stroke-width="3" fill="none"/>'; } return t; }
+    var i, n;
+    if (k === 'tro') { for (i = 0; i < 9; i++) s += broad(20 + i * 46 + rnd2(i) * 10, 80 + rnd2(i + 9) * 30, '#2f6b2f', '#1f4f22'); for (i = 0; i < 8; i++) s += broad(40 + i * 48, 50 + rnd2(i + 3) * 15, '#3f8a3a'); s += broad(200, 128, '#2f6b2f', '#1f4f22'); }
+    if (k === 'sub') { for (i = 0; i < 7; i++) s += broad(30 + i * 58, 70 + rnd2(i) * 20, '#3f8a3a', '#2f6b2f'); s += fern(120, 70) + fern(290, 64); }
+    if (k === 'lau') for (i = 0; i < 8; i++) s += broad(25 + i * 50 + rnd2(i) * 8, 64 + rnd2(i + 2) * 22, '#2f5f2f', '#4f8a4f');
+    if (k === 'sum') for (i = 0; i < 8; i++) s += broad(25 + i * 50 + rnd2(i) * 8, 60 + rnd2(i + 2) * 22, '#7fb04a', '#a8cc6a');
+    if (k === 'tai') for (i = 0; i < 11; i++) s += conifer(18 + i * 36 + rnd2(i) * 8, 60 + rnd2(i + 4) * 34, '#2f4f3a');
+    if (k === 'tun') { for (i = 0; i < 26; i++) s += '<ellipse cx="' + (rnd2(i) * 400) + '" cy="' + (G + 4 + rnd2(i + 5) * 22) + '" rx="' + (6 + rnd2(i + 2) * 10) + '" ry="3" fill="' + (i % 3 ? '#7a8f5a' : '#c9b36a') + '"/>'; }
+    if (k === 'scl') { for (i = 0; i < 5; i++) s += broad(40 + i * 80 + rnd2(i) * 20, 40 + rnd2(i + 1) * 12, '#7f9a5a', '#9fb07a'); for (i = 0; i < 14; i++) s += grass(rnd2(i + 30) * 400, 10, '#9a8a4a'); }
+    if (k === 'rai') { for (i = 0; i < 7; i++) s += broad(30 + i * 58, 60 + rnd2(i) * 18, i % 3 ? '#8aa04a' : '#b0a050', '#c0b060'); }
+    if (k === 'sav') { s += acacia(90, 70) + acacia(290, 58); for (i = 0; i < 40; i++) s += grass(rnd2(i) * 400, 14 + rnd2(i + 4) * 8, '#a8923a'); }
+    if (k === 'ste') for (i = 0; i < 60; i++) s += grass(rnd2(i) * 400, 12 + rnd2(i + 4) * 10, '#8a9a4a');
+    if (k === 'des') { s += '<path d="M0 ' + (G + 6) + ' Q80 ' + (G - 12) + ' 160 ' + (G + 4) + ' T320 ' + G + ' T400 ' + (G + 2) + ' V' + H + ' H0Z" fill="#edcf96"/>' + cactus(100, 46) + cactus(300, 34); }
+    return '<svg class="svgfig" viewBox="0 0 ' + W + ' ' + H + '" style="border-radius:6px;margin:4px 0">' + s + '</svg>';
+  }
   BL.biomeOf = classify; BL.BIOME = BIO;
   var CITY = [['那覇', 23.3, 2160], ['東京', 15.8, 1600], ['札幌', 9.2, 1150], ['モスクワ', 5.8, 710], ['カイロ', 22.4, 25], ['シンガポール', 27.6, 2500], ['ウランバートル', -0.4, 270]];
   BL.addSim({
@@ -133,7 +163,7 @@
           T = Math.round(Math.max(x0, Math.min(x1, x0 + (q.x - L) / (W - L - 12) * (x1 - x0))) * 2) / 2; P = Math.round(Math.max(0, Math.min(y1, (H - B - q.y) / (H - B - 12) * y1)) / 50) * 50;
           sT.set(T); sP.set(P); draw();
         });
-        info.innerHTML = '<h4 style="color:' + b.c + ';filter:brightness(.8)">' + b.n + '</h4>おもな植物：' + b.p + '<br>例：' + b.w + '<div class="note">図はグラフ上をクリックしても動かせます。境目は目安です。</div>';
+        info.innerHTML = '<h4 style="color:' + b.c + ';filter:brightness(.8)">' + b.n + '</h4>' + landscape(k) + 'おもな植物：' + b.p + '<br>例：' + b.w + '<div class="note">図はグラフ上をクリックしても動かせます。境目は目安です。</div>';
       }
       draw();
     }
