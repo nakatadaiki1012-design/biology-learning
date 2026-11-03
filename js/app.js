@@ -125,6 +125,8 @@
     var tabs = BL.el('div', { class: 'tabs', role: 'tablist' }); card.appendChild(tabs);
     var body = BL.el('div', { class: 'body' }); card.appendChild(body);
     var pTry = BL.el('div', { class: 'ctl' }), pHow = BL.el('div', { class: 'how' }, sim.how), pPts = BL.el('div');
+    var sph = (BL.PHOTOS || []).filter(function (p) { return (p.sims || []).indexOf(sim.id) >= 0; });
+    if (sph.length) { pHow.appendChild(BL.el('h3', { class: 'sub' }, '📷 写真で見る')); pHow.appendChild(BL.photoView(sph)); }
     var ctl = BL.el('div', { class: 'ctl' }); pTry.appendChild(ctl);
     var tl = BL.el('ul', { class: 'tasks' });
     var tbox = BL.el('div', { class: 'taskbox' }, '<h3 class="sub">🎯 やってみよう <span class="tcount"></span></h3>'); tbox.appendChild(tl); pTry.appendChild(tbox);
@@ -181,15 +183,36 @@
     });
     view.appendChild(m);
   }
-  function mountFig(el, sl) {
-    if (sl.sim && simById(sl.sim)) {
-      var sim = simById(sl.sim), w = BL.el('div', { class: 'simwrap' });
-      w.innerHTML = '<div class="eyebrow">🔬 ' + sim.name + '（動かしてみよう）</div>';
+  /* 授業の右側：図・実験・アニメ・写真 をタブで切りかえ */
+  function mediaFor(l, k) {
+    var sl = l.slides[k], out = [];
+    if (sl.fig) out.push({ kind: 'fig', t: '🖼 図' });
+    if (sl.sim && simById(sl.sim)) out.push({ kind: 'sim', id: sl.sim, t: '🔬 実験' });
+    BL.sims.forEach(function (sm) { if (sm.anim && (sm.slides || []).some(function (x) { return x[0] === l.id && x[1] === k; })) out.push({ kind: 'sim', id: sm.id, t: '🎬 アニメ', anim: 1 }); });
+    var ph = (BL.PHOTOS || []).filter(function (p) { return (p.slides || []).some(function (x) { return x[0] === l.id && x[1] === k; }); });
+    if (ph.length) out.push({ kind: 'photo', list: ph, t: '📷 写真' + (ph.length > 1 ? ' ' + ph.length : '') });
+    return out;
+  }
+  BL.photoView = function (list) {
+    var w = BL.el('div', { class: 'photov' }), i = 0;
+    function draw() {
+      var p = list[i];
+      w.innerHTML = '<figure><button class="phimg" title="大きく見る"><img src="' + p.file + '" alt="' + BL.esc(p.cap) + '" loading="lazy"' + (p.w ? ' width="' + p.w + '" height="' + p.h + '"' : '') + '></button><figcaption>' + BL.esc(p.cap) + '<small>写真：' + BL.esc(p.credit || '') + '（' + BL.esc(p.license || '') + '）' + (p.src ? ' <a href="' + p.src + '" target="_blank" rel="noopener">出典</a>' : '') + '</small></figcaption></figure>' + (list.length > 1 ? '<div class="phnav">' + list.map(function (q, j) { return '<button class="phth' + (j === i ? ' on' : '') + '" data-j="' + j + '"><img src="' + q.file + '" alt="" loading="lazy"></button>'; }).join('') + '</div>' : '');
+      w.querySelectorAll('.phth').forEach(function (b) { b.onclick = function () { i = +b.dataset.j; draw(); }; });
+      w.querySelector('.phimg').onclick = function () { var o = BL.el('div', { class: 'phzoom' }, '<img src="' + p.file + '" alt=""><p>' + BL.esc(p.cap) + '</p>'); o.onclick = function () { o.remove(); }; document.body.appendChild(o); };
+    }
+    draw(); return w;
+  };
+  function mountMedia(el, l, sl, m) {
+    if (m.kind === 'sim') {
+      var sim = simById(m.id), w = BL.el('div', { class: 'simwrap' });
+      w.innerHTML = '<div class="eyebrow">' + (m.anim ? '🎬 ' : '🔬 ') + sim.name + (m.anim ? '' : '（動かしてみよう）') + '</div>';
       var sin = BL.el('div', { class: 'stage-in' }), ctl = BL.el('div', { class: 'ctl' });
       w.appendChild(sin); w.appendChild(ctl); el.appendChild(w);
       return sim.mount(sin, ctl, simApi(sim)) || null;
     }
-    el.innerHTML = '<div class="figbox">' + sl.fig.replace('<svg', '<svg class="svgfig"') + '</div>';
+    if (m.kind === 'photo') { el.appendChild(BL.photoView(m.list)); return null; }
+    el.appendChild(BL.el('div', { class: 'figbox' }, sl.fig.replace('<svg', '<svg class="svgfig"')));
     return null;
   }
   function askBox(a, l, k) {
@@ -235,17 +258,25 @@
       area.innerHTML = ''; prev.disabled = k === 0; nav.hidden = k === N + 1;
       pos.textContent = k < N ? (k + 1) + ' / ' + N : 'ポイント';
       if (k < N) {
-        var sl = l.slides[k], hasFig = sl.sim || sl.fig;
+        var sl = l.slides[k], media = mediaFor(l, k), hasFig = media.length > 0;
         var g = BL.el('div', { class: 'slide' + (hasFig ? '' : ' solo') }); area.appendChild(g);
         if (hasFig) {
           var tg = BL.el('div', { class: 'figtoggle' }); g.appendChild(tg);
-          var sg = BL.ui.seg(tg, '', [[false, '📖 説明'], [true, sl.sim ? '🔬 実験' : '🖼 図']], showFig, function (v) { showFig = v; g.classList.toggle('show-fig', v); });
+          var sg = BL.ui.seg(tg, '', [[false, '📖 説明'], [true, media.length > 1 ? '🖼 図・' + media.slice(1).map(function (m) { return m.t.split(' ')[0]; }).join('') : media[0].t]], showFig, function (v) { showFig = v; g.classList.toggle('show-fig', v); });
         }
         var t = BL.el('div', { class: 'stext panel' }, '<h3>' + sl.h + '</h3>' + sl.html); g.appendChild(t);
         if (sl.ask) t.appendChild(askBox(sl.ask, l, k));
         if (hasFig) {
-          var f = BL.el('div', { class: 'sfig panel' }); g.appendChild(f); figClean = mountFig(f, sl);
-          var peek = BL.el('button', { class: 'btn peek' }, sl.sim ? '🔬 実験を動かす →' : '🖼 図を見る →');
+          var f = BL.el('div', { class: 'sfig panel' }); g.appendChild(f);
+          var body = BL.el('div', { class: 'mbody' }), cur = 0;
+          if (media.length > 1) {
+            var mt = BL.el('div', { class: 'mtabs', role: 'tablist' }); f.appendChild(mt);
+            media.forEach(function (m, i) { var b = BL.el('button', { role: 'tab', 'aria-selected': String(i === 0) }, m.t); b.onclick = function () { if (cur === i) return; cur = i; mt.querySelectorAll('button').forEach(function (x, j) { x.setAttribute('aria-selected', String(j === i)); }); show(); }; mt.appendChild(b); });
+          }
+          f.appendChild(body);
+          var show = function () { if (figClean) { try { figClean(); } catch (e) {} figClean = null; } body.innerHTML = ''; figClean = mountMedia(body, l, sl, media[cur]); };
+          show();
+          var peek = BL.el('button', { class: 'btn peek' }, media.map(function (m) { return m.t.split(' ')[0]; }).join('') + ' ' + (media[0].kind === 'sim' ? '実験を動かす' : '図を見る') + ' →');
           peek.addEventListener('click', function () { showFig = true; sg.set(true); g.classList.add('show-fig'); }); t.appendChild(peek);
         }
         next.textContent = k === N - 1 ? 'ポイントへ →' : '次へ →';

@@ -537,3 +537,26 @@ ol.pkey li { margin-bottom: 6px; }
 .weak h3 { margin: 0 0 6px; font-size: 14px; }
 .wrow { display: grid; grid-template-columns: minmax(0, 1fr) 50px 2.6em auto; gap: 8px; align-items: center; font-size: 14px; padding: 3px 0; }
 .wrow .bar { margin: 0; }
+
+/* 授業の右側のタブ（図・実験・アニメ・写真） */
+.mtabs { display: flex; gap: 4px; flex: none; margin-bottom: 6px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.mtabs button { border: 0; background: transparent; padding: 5px 12px; font-size: 13.5px; font-weight: 700; color: var(--muted); white-space: nowrap; border-radius: 6px 6px 0 0; }
+.mtabs button[aria-selected="true"] { color: var(--ink); background: var(--chip); box-shadow: inset 0 -2.5px 0 var(--accent); }
+.mbody { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mbody > .simwrap, .mbody > .figbox, .mbody > .photov { flex: 1; min-height: 0; }
+/* 写真 */
+.photov { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.photov figure { margin: 0; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.phimg { flex: 1; min-height: 0; border: 0; padding: 0; background: #111; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: zoom-in; }
+.phimg img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; }
+.photov figcaption { font-size: 14px; line-height: 1.55; }
+.photov figcaption small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.photov figcaption a { color: var(--ask); }
+.phnav { display: flex; gap: 6px; overflow-x: auto; flex: none; }
+.phth { flex: none; width: 64px; height: 46px; padding: 0; border: 2px solid transparent; border-radius: 5px; overflow: hidden; background: #111; }
+.phth.on { border-color: var(--accent); }
+.phth img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.phzoom { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.9); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; cursor: zoom-out; }
+.phzoom img { max-width: 100%; max-height: 85vh; object-fit: contain; }
+.phzoom p { color: #eee; margin: 0; font-size: 14px; text-align: center; max-width: 800px; }
+.card .photov .phimg { max-height: 260px; min-height: 160px; }

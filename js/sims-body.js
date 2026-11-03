@@ -19,6 +19,41 @@
     st.hist = []; st.t = 0;
     return st;
   }
+
+  /* からだの図：視床下部 → すい臓（A・B細胞）/ 副腎 → 肝臓・全身の細胞。ホルモンの流れを光る点で表す */
+  function sugarDiagram(st, type, ph) {
+    var hi = st.G > 115, lo = !hi && (st.G < 92 || st.ex > 0), n = BL.narrow(), fs = n ? 19 : 13;
+    function T(x, y, t, o) { o = o || {}; return '<text x="' + x + '" y="' + y + '" font-size="' + (o.fs || fs) + '" text-anchor="' + (o.a || 'middle') + '" fill="' + (o.c || 'var(--ink)') + '"' + (o.b ? ' font-weight="700"' : '') + '>' + t + '</text>'; }
+    function flow(x1, y1, x2, y2, on, col, k) {
+      var s = '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + (on ? col : 'var(--line)') + '" stroke-width="' + (on ? 3 : 2) + '"' + (on ? '' : ' stroke-dasharray="4 4"') + '/>';
+      if (on) for (var q = 0; q < 3; q++) { var u = (ph + q / 3 + (k || 0)) % 1; s += '<circle cx="' + (x1 + (x2 - x1) * u).toFixed(1) + '" cy="' + (y1 + (y2 - y1) * u).toFixed(1) + '" r="5" fill="' + col + '"/>'; }
+      return s;
+    }
+    var ins = hi && type !== 't1', insWeak = type === 't2';
+    var s = '<svg class="svgfig" viewBox="0 0 640 175" style="margin-bottom:4px">';
+    /* 血管（血糖）*/
+    var g = Math.round(Math.min(26, Math.max(4, st.G / 9)));
+    s += '<rect x="20" y="138" width="600" height="26" rx="13" fill="#f2c6c3" stroke="#c0392b"/>' + T(30, 156, '血管', { a: 'start', fs: fs - 1, c: '#7a1f1a', b: 1 });
+    for (var k = 0; k < g; k++) { var x = 80 + ((k / g * 530 + ph * 40) % 530); s += '<circle cx="' + x.toFixed(1) + '" cy="' + (147 + (k % 3) * 4) + '" r="3.2" fill="#d08a1e"/>'; }
+    s += T(620, 132, 'グルコース ●', { a: 'end', fs: fs - 2, c: '#b0700a' });
+    /* 脳（視床下部）*/
+    s += '<ellipse cx="70" cy="46" rx="50" ry="34" fill="#f1d3e0" stroke="#a04a6a" stroke-width="1.6"/><path d="M34 40 q10-14 22 0 t22 0 t22 0 M40 56 q10-10 20 0 t20 0 t20 0" fill="none" stroke="#a04a6a" stroke-width="1.2"/><circle cx="74" cy="66" r="7" fill="' + (hi || lo ? 'var(--warm)' : '#d9a0b8') + '"/>' + T(70, 98, '視床下部', { b: 1 });
+    /* すい臓 */
+    s += '<path d="M200 40 C230 18 300 20 330 36 C350 48 330 62 300 60 C270 58 240 70 214 66 C196 63 190 50 200 40Z" fill="#f3d9a4" stroke="#b8862c" stroke-width="1.6"/>';
+    s += '<circle cx="245" cy="44" r="10" fill="' + (lo ? 'var(--accent)' : '#cfe6b8') + '" stroke="#3b7a3a"/>' + T(245, 48, 'A', { fs: fs - 2, b: 1 }) + '<circle cx="285" cy="44" r="10" fill="' + (type === 't1' ? '#999' : hi ? 'var(--c3)' : '#c4d6ee') + '" stroke="#2f5f9e"/>' + T(285, 48, 'B', { fs: fs - 2, b: 1, c: hi ? '#fff' : 'var(--ink)' }) + (type === 't1' ? '<path d="M276 35 l18 18 M294 35 l-18 18" stroke="var(--ng)" stroke-width="3"/>' : '') + T(265, 86, 'すい臓（ランゲルハンス島）', { b: 1, fs: fs - 1 });
+    /* 副腎 */
+    s += '<path d="M392 52 l14 -18 l14 18z" fill="#f0c060" stroke="#b0700a"/><ellipse cx="406" cy="68" rx="16" ry="12" fill="#c98a7a" stroke="#8a4a3a"/>' + T(406, 98, '副腎', { b: 1, fs: fs - 1 });
+    /* 肝臓 */
+    s += '<path d="M500 30 C560 18 620 30 620 50 C618 74 560 86 520 80 C496 76 486 44 500 30Z" fill="#b5654c" stroke="#7a3a2a" stroke-width="1.6"/>' + T(556, 58, '肝臓', { b: 1, c: '#fff' }) + T(556, 98, hi && ins ? 'グリコーゲン合成' : lo ? 'グリコーゲン分解' : '', { fs: fs - 2, c: hi ? 'var(--c3)' : 'var(--accent)', b: 1 });
+    /* 流れ */
+    s += flow(120, 46, 196, 46, hi || lo, hi ? 'var(--c3)' : 'var(--accent)') + T(158, 36, hi ? '副交感神経' : lo ? '交感神経' : '自律神経', { fs: fs - 3, c: 'var(--muted)' });
+    s += flow(110, 70, 392, 60, lo, 'var(--warm)', .2);
+    s += flow(295, 56, 505, 70, ins, 'var(--c3)', .5) + flow(285, 58, 330, 136, ins, 'var(--c3)', .1) + (hi ? T(400, 124, insWeak ? 'インスリン（効きにくい）' : type === 't1' ? 'インスリンが出ない' : 'インスリン', { fs: fs - 1, c: 'var(--c3)', b: 1 }) : '');
+    s += flow(255, 56, 500, 44, lo, 'var(--accent)', .3) + (lo ? T(372, 34, 'グルカゴン', { fs: fs - 1, c: 'var(--accent)', b: 1 }) + T(470, 112, 'アドレナリン', { fs: fs - 1, c: 'var(--warm)', b: 1 }) : '');
+    s += flow(420, 56, 505, 60, lo, 'var(--warm)', .7);
+    if (lo) s += flow(612, 72, 612, 136, true, '#d08a1e', .4);
+    return s + '</svg>';
+  }
   BL.sugarModel = sugarModel;
   BL.addSim({
     id: 'sugar', name: '血糖値の調節', cat: 'からだ', subj: 'kiso', ic: '糖', lead: '食事や運動のあと、ホルモンで血糖値がもどるようすを見る',
@@ -41,11 +76,11 @@
         var h = st.hist, t1 = Math.max(240, st.t), t0 = t1 - 240;
         var G = [], I = [], Gn = [];
         h.forEach(function (p) { if (p[0] >= t0) { G.push([p[0], p[1]]); I.push([p[0], p[2] * 4]); Gn.push([p[0], p[3] * 8]); } });
-        stage.innerHTML = '<div style="width:100%;max-width:760px">' + BL.plot({ w: 640, h: 330, x: [t0, t1], y: [0, 260], xt: [0, 60, 120, 180, 240].map(function (v) { return Math.round((t0 + v) / 10) * 10; }), yt: [0, 50, 100, 150, 200, 250], xl: '時間（分）', yl: '血糖値（mg/100mL）・ホルモン（相対値）', series: [{ pts: G, c: 'var(--warm)', w: 3.2, label: '血糖値' }, { pts: I, c: 'var(--c3)', label: 'インスリン' }, { pts: Gn, c: 'var(--accent)', label: 'グルカゴン' }], hl: [{ y: 100, t: '正常（約100）' }, { y: 200, c: 'var(--ng)', t: '高血糖' }] }) + '</div>';
+        stage.innerHTML = '<div style="width:100%;max-width:760px">' + sugarDiagram(st, type, (st.t * 0.6) % 1) + BL.plot({ w: 640, h: 250, x: [t0, t1], y: [0, 260], xt: [0, 60, 120, 180, 240].map(function (v) { return Math.round((t0 + v) / 10) * 10; }), yt: [0, 50, 100, 150, 200, 250], xl: '時間（分）', yl: '血糖値（mg/100mL）・ホルモン（相対値）', series: [{ pts: G, c: 'var(--warm)', w: 3.2, label: '血糖値' }, { pts: I, c: 'var(--c3)', label: 'インスリン' }, { pts: Gn, c: 'var(--accent)', label: 'グルカゴン' }], hl: [{ y: 100, t: '正常（約100）' }, { y: 200, c: 'var(--ng)', t: '高血糖' }] }) + '</div>';
         m([st.t + ' 分', Math.round(st.G) + ' mg', BL.fmt(st.I, 1), BL.fmt(st.Gn, 1)], [0, st.G > 140 || st.G < 70, 0, 0]);
         var msg;
         if (st.G > 115) msg = '<h4>血糖値が高い ↑</h4>視床下部が感知 → 副交感神経 → すい臓ランゲルハンス島 B細胞 → <b>インスリン</b> → 細胞がグルコースを取りこむ・肝臓でグリコーゲンを合成' + (type === 't1' ? '<br><b style="color:var(--ng)">1型：B細胞がこわれていてインスリンがほとんど出ない！</b>' : type === 't2' ? '<br><b style="color:var(--ng)">2型：インスリンが効きにくく、なかなか下がらない</b>' : '');
-        else if (st.G < 88) msg = '<h4>血糖値が低い ↓</h4>視床下部 → 交感神経 → ランゲルハンス島 A細胞 → <b>グルカゴン</b>、副腎髄質 → <b>アドレナリン</b> → 肝臓のグリコーゲンを分解してグルコースを出す';
+        else if (st.G < 92 || st.ex > 0) msg = '<h4>血糖値が低い ↓</h4>視床下部 → 交感神経 → ランゲルハンス島 A細胞 → <b>グルカゴン</b>、副腎髄質 → <b>アドレナリン</b> → 肝臓のグリコーゲンを分解してグルコースを出す';
         else msg = '<h4>ちょうどよい</h4>血糖値は 約100 mg/100mL 付近に保たれている（恒常性）。';
         if (path._m !== msg) { path.innerHTML = msg; path._m = msg; }
         if (type === 'ok' && ate && st.t - ate > 120 && st.G < 110) api.task(0);
