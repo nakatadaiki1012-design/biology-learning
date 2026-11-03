@@ -438,7 +438,6 @@
         if (post) s += '<path d="M126 262 L514 262 L514 430 L126 430Z" fill="var(--a-glow)" opacity="' + f1(post * 0.8) + '"/>';
         /* 神経終末 */
         s += '<path d="M282 -4 L282 64 C282 92 200 104 200 158 C200 196 222 212 258 212 L382 212 C418 212 440 196 440 158 C440 104 358 92 358 64 L358 -4" fill="var(--a-ax)" stroke="var(--a-mem)" stroke-width="6" stroke-linejoin="round"/>';
-        s += '<rect x="286" y="-4" width="68" height="40" fill="var(--a-myl)" opacity=".0"/>';
         /* ミトコンドリア */
         s += '<g transform="translate(404 120) rotate(-30)"><ellipse rx="22" ry="11" fill="var(--a-mit)" stroke="var(--a-mitd)" stroke-width="1.5"/><path d="M-14 0 q4 -8 8 0 q4 8 8 0 q4 -8 8 0" fill="none" stroke="var(--a-mitd)" stroke-width="1.2"/></g>';
         /* 興奮が下りてくる */
@@ -798,7 +797,6 @@
           var abop = 1 - cl((P - 5.9) / 0.12, 0, 1);
           if (abop > 0) s += ab(aq[0], aq[1], k2 * 30 + (P < st0 + 0.5 ? t * 60 : 0), abop);
         }
-        if (P > 6.92 && P < 7.0) {}
         /* キラーT細胞 */
         var tc1 = [430, 244], tcG = P > 6.0 && P < 6.22 ? 0.9 : 0;
         s += lym(tc1[0], tc1[1], 'var(--c1)', 'キ', { glow: tcG, mem: cl((P - 7.3) / 0.2, 0, 1) });
@@ -823,7 +821,7 @@
       }
       function top(K) {
         var s = '';
-        s += tx(K, 16, 56, 'からだの組織', { fs: 12.5, w: 800, c: 'var(--muted)' });
+        s += tx(K, 176, 312, 'からだの組織', { fs: 12.5, w: 800, c: 'var(--muted)' });
         s += tx(K, 482, 20, 'リンパ節', { a: 'middle', fs: 13, w: 800, c: 'var(--c6)' });
         s += tx(K, 628, 359, '血管（血液）', { a: 'end', fs: 12, w: 700, c: 'var(--muted)' });
         /* 凡例 */
