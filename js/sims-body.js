@@ -119,14 +119,59 @@
         if (k === 'A' && prior) { api.task(0); if (ev.some(function (e) { return e.v; })) api.task(2); }
         if (k === 'B' && ev.some(function (e) { return e.k === 'A'; })) api.task(1);
         info.innerHTML = prior ? '<h4>二次応答！</h4>記憶細胞が残っていたので、すぐに大量の抗体ができる。' + (ev.some(function (e) { return e.v; }) ? '（ワクチンでできた記憶細胞のおかげ）' : '') : '<h4>一次応答</h4>はじめての抗原なので、抗体ができるまで 1 週間ほどかかり、量も少ない。記憶細胞ができる。';
-        log.textContent = ev.map(function (e) { return e.d + '日目：' + (e.v ? 'ワクチンA' : '抗原' + e.k); }).join('、');
+        log.textContent = ev.map(function (e) { return Math.floor(e.d) + '日目：' + (e.v ? 'ワクチンA' : '抗原' + e.k); }).join('、');
       }
       function lvl(k, d) { return ev.filter(function (e) { return e.k === k; }).reduce(function (s, e) { return s + resp(d, e.d, e.s) * (e.v ? .8 : 1); }, 0); }
+      /* 免疫のようすのイラスト（上）と抗体量のグラフ（下） */
+      var nar = BL.narrow(), PH = nar ? 196 : 176, fs = nar ? 17 : 11, I = BL.ill, KC = { A: '#d5832c', B: '#2f6fb0' }, KT = { A: 'var(--warm)', B: 'var(--c3)' };
+      function U(id, x, y, k, extra) { return '<use href="#im-' + id + '" transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') scale(' + k + ')"' + (extra || '') + '/>'; }
+      var IDEFS = '';
+      ['A', 'B'].forEach(function (k) { var c = KC[k]; IDEFS += '<g id="im-v' + k + '">' + I.virus({ ha: c, na: c }) + '</g><g id="im-vd' + k + '">' + I.virus({ ha: c, na: c, dead: 1 }) + '</g><g id="im-ab' + k + '">' + I.antibody({ c: c }) + '</g><g id="im-b' + k + '">' + I.lymphocyte({ kind: 'B', c: c }) + '</g><g id="im-m' + k + '">' + I.lymphocyte({ kind: 'mem', c: c }) + '</g><g id="im-dc' + k + '">' + I.dendritic({ ag: c }) + '</g>'; });
+      IDEFS += '<g id="im-t">' + I.lymphocyte({ kind: 'T', c: '#3b7a3a' }) + '</g><g id="im-p">' + I.lymphocyte({ kind: 'plasma' }) + '</g>';
+      var holder = BL.el('div', { style: 'width:100%;max-width:760px;display:flex;flex-direction:column;gap:4px' });
+      holder.innerHTML = '<svg class="svgfig" viewBox="0 0 640 ' + PH + '" role="img">' + I.lifeDefs() + '<defs>' + IDEFS + '</defs>' +
+        '<rect x="2" y="2" width="200" height="' + (PH - 4) + '" rx="8" fill="var(--c2)" opacity=".16"/><path d="M212 ' + (PH / 2) + 'C212 10 300 4 330 22C352 8 428 8 430 ' + (PH / 2) + 'C430 ' + (PH - 8) + ' 350 ' + (PH - 4) + ' 320 ' + (PH - 14) + 'C290 ' + (PH - 4) + ' 212 ' + (PH - 10) + ' 212 ' + (PH / 2) + 'Z" fill="var(--c6)" opacity=".16"/><rect x="438" y="2" width="200" height="' + (PH - 4) + '" rx="8" fill="var(--c1)" opacity=".1"/>' +
+        '<g font-size="' + fs + '" font-weight="700" fill="var(--ink)" paint-order="stroke" stroke="var(--panel)" stroke-width="3"><text x="10" y="' + (fs + 4) + '">① 抗原が侵入</text><text x="224" y="' + (fs + 4) + '">② リンパ節</text><text x="446" y="' + (fs + 4) + '">③ 抗体がはたらく</text></g><g class="im-dyn"></g></svg><div class="im-plot"></div>';
+      stage.appendChild(holder);
+      var dyn = holder.querySelector('.im-dyn'), plotBox = holder.querySelector('.im-plot');
+      function hsh(i) { var x = Math.sin(i * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
+      function panel() {
+        var ks = ['A', 'B'].filter(function (k) { return ev.some(function (e) { return e.k === k && e.d <= day; }); }), out = '';
+        if (!ks.length) { dyn.innerHTML = '<text x="320" y="' + (PH / 2 + 4) + '" text-anchor="middle" font-size="' + (fs + 1) + '" fill="var(--muted)">ボタンで抗原を入れると、ここで免疫のようすが見られます</text>'; return; }
+        var rows = ks.length === 1 ? [PH / 2 + 6] : [PH * .36 + 4, PH * .74 + 4];
+        ks.forEach(function (k, ri) {
+          var y = rows[ri], list = ev.filter(function (e) { return e.k === k && e.d <= day; }), e = list[list.length - 1], x = day - e.d, sec = e.s, lag = sec ? 2 : 6, peak = sec ? 6 : 12;
+          var ag = x < lag ? 1 : Math.exp(-(x - lag) / (sec ? 1.6 : 5)), lv = lvl(k, day), nAb = Math.max(0, Math.min(14, Math.round(Math.log10(Math.max(lv, .01) / .01) * 2.6))), sk = nar ? .44 : .4;
+          /* ① 抗原（ウイルス）と樹状細胞 */
+          var nAg = Math.round(ag * 6);
+          for (var i = 0; i < nAg; i++) out += U((e.v ? 'vd' : 'v') + k, 18 + hsh(i + ri * 9) * 115 + Math.sin(day * 1.3 + i) * 3, y - 16 + hsh(i * 3 + ri) * 32 + Math.cos(day + i) * 3, .24);
+          if (x < lag + peak) out += U('dc' + k, 168, y, sk);
+          /* ② ヘルパーT細胞 → B細胞 → 形質細胞 */
+          var act = x >= lag * .5;
+          out += U('t', 238, y - 4, .3) + U('b' + k, 286, y, sk, act ? '' : ' opacity=".75"');
+          out += '<path d="M253 ' + (y - 4) + 'L266 ' + (y - 2) + '" stroke="#3b7a3a" stroke-width="2" marker-end="none"/><path d="M190 ' + y + 'L224 ' + (y - 4) + '" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 3"/>';
+          if (x >= lag) {
+            var np = sec ? 2 : 1;
+            for (i = 0; i < np; i++) out += U('p', 346 + i * 40, y + (np > 1 ? (i ? 7 : -7) : 0), .4);
+            if (x < lag + peak + 6) for (i = 0; i < (sec ? 6 : 3); i++) { var u = (day * .9 + i / (sec ? 6 : 3)) % 1; out += U('ab' + k, 362 + u * 74, y - 12 + hsh(i + 5) * 24, .34, ' opacity="' + (1 - u * .4).toFixed(2) + '"'); }
+          }
+          /* 記憶細胞 */
+          var mem = ev.some(function (q) { return q.k === k && day - q.d >= (q.s ? 3 : 9); });
+          if (mem) out += U('m' + k, 606, y - 4, .36) + '<text x="610" y="' + (y + 26) + '" text-anchor="middle" font-size="' + (fs - 1) + '" font-weight="700" fill="' + KT[k] + '" paint-order="stroke" stroke="var(--panel)" stroke-width="3">記憶細胞</text>';
+          /* ③ 抗体と、抗体に囲まれた抗原 */
+          for (i = 0; i < nAb; i++) out += U('ab' + k, 452 + hsh(i * 7 + ri) * 120, y - 18 + hsh(i * 5 + 2 + ri) * 36, .3).replace('scale(', 'rotate(' + Math.round(hsh(i) * 360 + day * 10) + ') scale(');
+          if (ag > .08 && nAb > 2 && x >= lag) { var bx = 520, n2 = Math.min(5, nAb); out += U((e.v ? 'vd' : 'v') + k, bx, y, .26); for (i = 0; i < n2; i++) { var a = i / n2 * Math.PI * 2; out += '<use href="#im-ab' + k + '" transform="translate(' + (bx + Math.cos(a) * 24).toFixed(1) + ' ' + (y + Math.sin(a) * 24).toFixed(1) + ') rotate(' + (a * 57.3 - 90).toFixed(0) + ') scale(.28)"/>'; } }
+          var ph = x < lag ? (sec ? '記憶細胞がすぐ反応' : '抗原提示 → B細胞が活性化') : x < lag + peak ? '形質細胞が抗体を放出' : '抗原を排除。記憶細胞が残る';
+          out += '<text x="321" y="' + (y + (nar ? 34 : 29)) + '" text-anchor="middle" font-size="' + (fs - 1) + '" font-weight="700" fill="' + KT[k] + '" paint-order="stroke" stroke="var(--panel)" stroke-width="3">' + (e.v ? 'ワクチンA：' : '抗原' + k + '：') + ph + '</text>';
+        });
+        dyn.innerHTML = out;
+      }
       function draw() {
         var A = [], B = [];
         for (var d = 0; d <= Math.max(80, day); d += .5) { if (d > day) break; A.push([d, Math.max(.01, lvl('A', d))]); B.push([d, Math.max(.01, lvl('B', d))]); }
         var x1 = Math.max(80, day);
-        stage.innerHTML = '<div style="width:100%;max-width:760px">' + BL.plot({ w: 640, h: 340, x: [x1 - 80, x1], y: [.01, 300], ylog: true, xt: [0, 20, 40, 60, 80].map(function (v) { return x1 - 80 + v; }), yt: [.01, .1, 1, 10, 100], xl: '日数', yl: '血液中の抗体の量（相対値・目盛りは10倍ずつ）', series: [{ pts: A, c: 'var(--warm)', w: 3, label: '抗A抗体' }, { pts: B, c: 'var(--c3)', w: 3, label: '抗B抗体' }], vl: ev.map(function (e) { return { x: e.d, c: e.k === 'A' ? 'var(--warm)' : 'var(--c3)', t: e.v ? 'ワクチン' : e.k }; }) }) + '</div>';
+        panel();
+        plotBox.innerHTML = BL.plot({ w: 640, h: 300, x: [x1 - 80, x1], y: [.01, 300], ylog: true, xt: [0, 20, 40, 60, 80].map(function (v) { return x1 - 80 + v; }), yt: [.01, .1, 1, 10, 100], xl: '日数', yl: '血液中の抗体の量（相対値・目盛りは10倍ずつ）', series: [{ pts: A, c: 'var(--warm)', w: 3, label: '抗A抗体' }, { pts: B, c: 'var(--c3)', w: 3, label: '抗B抗体' }], vl: ev.map(function (e) { return { x: e.d, c: e.k === 'A' ? 'var(--warm)' : 'var(--c3)', t: e.v ? 'ワクチン' : e.k }; }) });
         m([Math.floor(day) + ' 日', BL.fmt(lvl('A', day), 1), BL.fmt(lvl('B', day), 1)]);
       }
       var stop = BL.loop(function (dt) { day += dt * 4; draw(); });
@@ -186,11 +231,24 @@
         });
         return Math.max(-90, Math.min(45, v));
       }
+      /* ニューロンのイラスト（js/illust-life.js）＋ 興奮が伝わるようす */
+      var NO = { x0: 6, x1: 626, y: 64, n: 7 }, G = BL.ill.neuronGeo(NO), fsN = BL.narrow() ? 18 : 10, NEU = {};
+      function neuronPic(my) { var k = String(my); return NEU[k] || (NEU[k] = BL.ill.neuron({ x0: NO.x0, x1: NO.x1, y: NO.y, n: NO.n, myel: my, lab: true, fs: fsN })); }
       function axon() {
-        var s = '<svg class="svgfig" viewBox="0 0 640 90"><circle cx="40" cy="45" r="28" fill="var(--nuc)" stroke="var(--ink)"/><text x="40" y="50" text-anchor="middle" font-size="11" fill="var(--ink)">細胞体</text><line x1="68" y1="45" x2="620" y2="45" stroke="var(--ink)" stroke-width="5"/>';
-        if (myel) for (var k = 0; k < 7; k++) s += '<rect x="' + (84 + k * 76) + '" y="33" width="64" height="24" rx="12" fill="var(--chip)" stroke="var(--ink)"/>';
-        if (pulse >= 0) { var px = 68 + pulse * 552; if (myel) px = 78 + Math.round(pulse * 7) * 76; s += '<circle cx="' + px + '" cy="45" r="11" fill="var(--warm)" opacity=".85"/>'; }
-        return s + '<text x="330" y="84" text-anchor="middle" font-size="11.5" fill="var(--muted)">' + (myel ? '有髄神経繊維：髄鞘のすき間（ランビエ絞輪）をとびとびに伝わる' : '無髄神経繊維：となりへ順に伝わる（おそい）') + '</text></svg>';
+        var cy = G.cy, s = '<svg class="svgfig" viewBox="0 0 640 ' + (BL.narrow() ? 166 : 150) + '">' + BL.ill.lifeDefs() + neuronPic(myel), ex = '';
+        if (pulse >= 0) {
+          if (myel) {
+            var nn = G.nodes.length - 1, idx = Math.min(nn, Math.floor(Math.min(pulse, .999) * (nn + 1))), x = G.nodes[idx];
+            if (idx > 0) s += '<ellipse cx="' + G.nodes[idx - 1] + '" cy="' + cy + '" rx="10" ry="10" fill="url(#lf-glowb)"/>';
+            s += '<ellipse cx="' + x + '" cy="' + cy + '" rx="17" ry="17" fill="url(#lf-glow)"/><text x="' + x + '" y="' + (cy + 3.5) + '" text-anchor="middle" font-size="10" font-weight="700" fill="#b8301a">＋</text>';
+            if (idx < nn) s += '<path d="M' + x + ' ' + (cy - 13) + 'Q' + ((x + G.nodes[idx + 1]) / 2) + ' ' + (cy - 34) + ' ' + G.nodes[idx + 1] + ' ' + (cy - 13) + '" fill="none" stroke="var(--warm)" stroke-width="1.6" stroke-dasharray="3 3"/><path d="M' + (G.nodes[idx + 1] - 5) + ' ' + (cy - 20) + 'L' + G.nodes[idx + 1] + ' ' + (cy - 13) + 'L' + (G.nodes[idx + 1] + 3) + ' ' + (cy - 21) + '" fill="none" stroke="var(--warm)" stroke-width="1.6"/>';
+          } else {
+            var px = G.xa + Math.min(1, pulse) * (G.xb - G.xa);
+            s += '<rect x="' + (px - 70) + '" y="' + (cy - 5) + '" width="70" height="10" fill="url(#lf-glowb)" opacity=".8"/><ellipse cx="' + px + '" cy="' + cy + '" rx="20" ry="11" fill="url(#lf-glow)"/><text x="' + px + '" y="' + (cy + 3.5) + '" text-anchor="middle" font-size="10" font-weight="700" fill="#b8301a">＋</text>';
+          }
+          if (pulse > .95) G.ends.forEach(function (e, k) { s += '<circle cx="' + e[0] + '" cy="' + e[1] + '" r="13" fill="url(#lf-glow)"/>'; for (var j = 0; j < 3; j++) s += '<circle cx="' + (e[0] + 8 + (pulse - .95) * 120 + j * 1.5) + '" cy="' + (e[1] - 3 + j * 3) + '" r="1.4" fill="var(--c3)"/>'; });
+        }
+        return s + '<text x="330" y="' + (BL.narrow() ? 160 : 145) + '" text-anchor="middle" font-size="' + (BL.narrow() ? 15 : 11.5) + '" fill="var(--muted)">' + (myel ? '有髄神経繊維：ランビエ絞輪から絞輪へ、とびとびに伝わる（跳躍伝導）' : '無髄神経繊維：となりへ順に伝わる（おそい）') + '</text></svg>';
       }
       return stop;
     }

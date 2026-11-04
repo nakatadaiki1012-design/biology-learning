@@ -94,33 +94,65 @@
 
   /* ---------- 細胞分裂 ---------- */
   var CH = [{ l: 64, c: 'var(--c1)' }, { l: 64, c: 'var(--c2)' }, { l: 36, c: 'var(--c3)' }, { l: 36, c: 'var(--c4)' }];
+  /* 図の部品：凝縮した染色体（2本の染色分体・動原体のくびれ・しま模様）、二重の核膜、紡錘体と星状体 */
+  var MDEFS = '<defs><linearGradient id="mt-sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient>' +
+    '<radialGradient id="mt-cy" cx=".42" cy=".38" r=".62"><stop offset=".55" stop-color="#c9a227" stop-opacity="0"/><stop offset="1" stop-color="#c9a227" stop-opacity=".28"/></radialGradient>' +
+    '<radialGradient id="mt-nu" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".7" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#6b4a8a" stop-opacity=".3"/></radialGradient>' +
+    '<radialGradient id="mt-pc" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#7fb2e5" stop-opacity=".75"/><stop offset="1" stop-color="#7fb2e5" stop-opacity="0"/></radialGradient></defs>';
+  var BANDS = [[-.4, -.27, -.12, .2, .33, .43], [-.42, -.3, -.16, .14, .28, .4], [-.36, -.18, .22, .38], [-.38, -.2, .16, .36]];
+  function chromatid(xc, l, col, k, swap, rot) {
+    var w = 5, wc = 2.5, h = l / 2, f = function (v) { return Math.round(v * 10) / 10; };
+    var d = 'M' + f(xc - w) + ' ' + f(-h + w) + 'A' + w + ' ' + w + ' 0 0 1 ' + f(xc + w) + ' ' + f(-h + w) + 'L' + f(xc + w) + ' -6C' + f(xc + w) + ' -2.5 ' + f(xc + wc) + ' -2.5 ' + f(xc + wc) + ' 0C' + f(xc + wc) + ' 2.5 ' + f(xc + w) + ' 2.5 ' + f(xc + w) + ' 6L' + f(xc + w) + ' ' + f(h - w) + 'A' + w + ' ' + w + ' 0 0 1 ' + f(xc - w) + ' ' + f(h - w) + 'L' + f(xc - w) + ' 6C' + f(xc - w) + ' 2.5 ' + f(xc - wc) + ' 2.5 ' + f(xc - wc) + ' 0C' + f(xc - wc) + ' -2.5 ' + f(xc - w) + ' -2.5 ' + f(xc - w) + ' -6Z';
+    var s = '<g transform="rotate(' + (rot || 0) + ')"><path d="' + d + '" fill="' + col + '"/>';
+    if (swap) s += '<path d="M' + f(xc - w) + ' ' + f(h - 16) + 'H' + f(xc + w) + 'V' + f(h - w) + 'A' + w + ' ' + w + ' 0 0 1 ' + f(xc - w) + ' ' + f(h - w) + 'Z" fill="' + swap + '"/>';
+    s += BANDS[k].map(function (b) { var y = f(b * l); return '<line x1="' + f(xc - 3.6) + '" y1="' + y + '" x2="' + f(xc + 3.6) + '" y2="' + y + '" stroke="#000" stroke-opacity=".22" stroke-width="' + (Math.abs(b) > .3 ? 2.2 : 1.4) + '"/>'; }).join('');
+    return s + '<path d="' + d + '" fill="url(#mt-sh)" stroke="var(--ink)" stroke-opacity=".7" stroke-width=".9"/></g>';
+  }
   function chrom(x, y, k, dbl, ang, swap) {
     var c = CH[k], l = c.l, s = '<g transform="translate(' + x + ' ' + y + ') rotate(' + (ang || 0) + ')">';
-    if (dbl) {
-      s += '<rect x="-11" y="' + (-l / 2) + '" width="10" height="' + l + '" rx="5" fill="' + c.c + '" stroke="var(--ink)" stroke-width="1"/>';
-      s += '<rect x="1" y="' + (-l / 2) + '" width="10" height="' + l + '" rx="5" fill="' + c.c + '" stroke="var(--ink)" stroke-width="1"/>';
-      if (swap) s += '<rect x="1" y="' + (l / 2 - 16) + '" width="10" height="16" rx="5" fill="' + swap + '" stroke="var(--ink)" stroke-width="1"/>';
-      s += '<circle r="4" fill="var(--ink)"/>';
-    } else s += '<rect x="-5" y="' + (-l / 2) + '" width="10" height="' + l + '" rx="5" fill="' + c.c + '" stroke="var(--ink)" stroke-width="1"/>' + (swap ? '<rect x="-5" y="' + (l / 2 - 16) + '" width="10" height="16" rx="5" fill="' + swap + '" stroke="var(--ink)" stroke-width="1"/>' : '') + '<circle r="3" fill="var(--ink)"/>';
+    if (dbl) s += chromatid(-4.4, l, c.c, k, '', 4) + chromatid(4.4, l, c.c, k, swap, -4) + '<ellipse cx="-7.6" cy="0" rx="1.6" ry="2.6" fill="#3a3a3a"/><ellipse cx="7.6" cy="0" rx="1.6" ry="2.6" fill="#3a3a3a"/>';
+    else s += chromatid(0, l, c.c, k, swap, 0) + '<ellipse cx="-3.2" cy="0" rx="1.3" ry="2.2" fill="#3a3a3a"/>';
     return s + '</g>';
   }
-  function cellC(cx, cy, r) { return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="var(--cyto)" stroke="#c9a227" stroke-width="3"/>'; }
-  function nuc(cx, cy, r, dash) { return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="var(--nuc)" stroke="#6b4a8a" stroke-width="2"' + (dash ? ' stroke-dasharray="6 6" fill-opacity=".4"' : '') + '/>'; }
+  function cellC(cx, cy, r) {
+    var s = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="var(--cyto)"/><circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#mt-cy)" stroke="#c9a227" stroke-width="3"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (r - 3) + '" fill="none" stroke="#e3c86a" stroke-width="1" opacity=".8"/>';
+    for (var k = 0; k < Math.round(r / 6); k++) { var a = k * 2.399, rr = r * (.55 + (k * .37 % 1) * .35); s += '<ellipse cx="' + (cx + Math.cos(a) * rr).toFixed(1) + '" cy="' + (cy + Math.sin(a) * rr).toFixed(1) + '" rx="5" ry="2.2" transform="rotate(' + (k * 47 % 180) + ' ' + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1) + ')" fill="#f3b38a" stroke="#a0522d" stroke-width=".6" opacity=".55"/>'; }
+    return s;
+  }
+  function nuc(cx, cy, r, dash) {
+    if (dash) return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="var(--nuc)" fill-opacity=".35"/><circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="#6b4a8a" stroke-width="1.5" stroke-dasharray="16 11"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (r - 3) + '" fill="none" stroke="#6b4a8a" stroke-width="1" stroke-dasharray="15 12" stroke-dashoffset="1"/>';
+    var s = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="var(--nuc)" stroke="#6b4a8a" stroke-width="1.6"/><circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#mt-nu)"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (r - 3) + '" fill="none" stroke="#6b4a8a" stroke-width="1"/>';
+    for (var k = 0; k < 14; k++) { var a = k / 14 * Math.PI * 2 + .2; s += '<circle cx="' + (cx + Math.cos(a) * (r - 1.5)).toFixed(1) + '" cy="' + (cy + Math.sin(a) * (r - 1.5)).toFixed(1) + '" r="1.7" fill="var(--nuc)"/>'; }
+    return s + '<circle cx="' + (cx + r * .3) + '" cy="' + (cy - r * .3) + '" r="' + (r * .17) + '" fill="#8a6aa8" opacity=".75"/>';
+  }
   function threads(cx, cy, n, dbl) {
-    var s = '';
+    var s = '', R = cx > 300 ? 46 : 54;
+    if (Math.abs(cx - 300) < 1) R = 62;
     for (var k = 0; k < n; k++) {
-      var a = k * 1.7, x = cx + Math.cos(a) * 22, y = cy + Math.sin(a) * 22, d = 'M' + (x - 26) + ' ' + y + ' q13 -16 26 0 t26 0';
-      s += '<path d="' + d + '" fill="none" stroke="' + CH[k % 4].c + '" stroke-width="2.5"/>';
-      if (dbl) s += '<path d="' + d + '" transform="translate(0 5)" fill="none" stroke="' + CH[k % 4].c + '" stroke-width="2.5"/>';
+      var pts = [], x = cx + Math.cos(k * 1.57 + .4) * R * .35, y = cy + Math.sin(k * 1.57 + .4) * R * .35, a = k * 2.1;
+      for (var j = 0; j < 14; j++) { pts.push([x, y]); a += Math.sin(j * 1.9 + k * 3) * 1.3; x += Math.cos(a) * R * .2; y += Math.sin(a) * R * .2; var dd = Math.hypot(x - cx, y - cy); if (dd > R * .8) { x = cx + (x - cx) * R * .8 / dd; y = cy + (y - cy) * R * .8 / dd; a += 2.4; } }
+      var d = BL.ill.smooth(pts);
+      s += '<path d="' + d + '" fill="none" stroke="' + CH[k % 4].c + '" stroke-width="2.2" stroke-linecap="round"/>';
+      if (dbl) s += '<path d="' + d + '" transform="translate(2.6 2.6)" fill="none" stroke="' + CH[k % 4].c + '" stroke-width="2.2" stroke-linecap="round" opacity=".85"/>';
     }
     return s;
   }
-  function spindle(px1, px2, cy, ys) { var s = ''; ys.forEach(function (y) { s += '<line x1="' + px1 + '" y1="' + cy + '" x2="' + ((px1 + px2) / 2) + '" y2="' + y + '" stroke="var(--muted)" stroke-width="1"/><line x1="' + px2 + '" y1="' + cy + '" x2="' + ((px1 + px2) / 2) + '" y2="' + y + '" stroke="var(--muted)" stroke-width="1"/>'; }); return s + '<circle cx="' + px1 + '" cy="' + cy + '" r="6" fill="var(--c3)"/><circle cx="' + px2 + '" cy="' + cy + '" r="6" fill="var(--c3)"/>'; }
+  function aster(x, y, rays) {
+    var s = '<circle cx="' + x + '" cy="' + y + '" r="12" fill="url(#mt-pc)"/>';
+    for (var k = 0; k < (rays || 16); k++) { var a = k / (rays || 16) * Math.PI * 2; s += '<line x1="' + (x + Math.cos(a) * 6).toFixed(1) + '" y1="' + (y + Math.sin(a) * 6).toFixed(1) + '" x2="' + (x + Math.cos(a) * (17 + (k % 3) * 4)).toFixed(1) + '" y2="' + (y + Math.sin(a) * (17 + (k % 3) * 4)).toFixed(1) + '" stroke="var(--c3)" stroke-width=".8" opacity=".6"/>'; }
+    return s + '<rect x="' + (x - 4) + '" y="' + (y - 1.6) + '" width="8" height="3.2" rx="1" fill="var(--c3)" stroke="var(--ink)" stroke-opacity=".5" stroke-width=".5"/><rect x="' + (x - 1.6) + '" y="' + (y - 4) + '" width="3.2" height="8" rx="1" fill="var(--c3)" stroke="var(--ink)" stroke-opacity=".5" stroke-width=".5" transform="translate(4 3)"/>';
+  }
+  function spindle(px1, px2, cy, ys) {
+    var s = '', mx = (px1 + px2) / 2, half = (px2 - px1) / 2;
+    [-30, -14, 14, 30].forEach(function (o) { s += '<path d="M' + px1 + ' ' + cy + 'Q' + (mx - half * .2) + ' ' + (cy + o * 2.2) + ' ' + (mx + half * .25) + ' ' + (cy + o * 1.6) + 'M' + px2 + ' ' + cy + 'Q' + (mx + half * .2) + ' ' + (cy + o * 2.2) + ' ' + (mx - half * .25) + ' ' + (cy + o * 1.6) + '" fill="none" stroke="var(--muted)" stroke-width=".8" opacity=".5"/>'; });
+    ys.forEach(function (y) { s += '<path d="M' + px1 + ' ' + cy + 'Q' + (px1 + half * .55) + ' ' + (cy + (y - cy) * 1.05) + ' ' + (mx - 7) + ' ' + y + 'M' + px2 + ' ' + cy + 'Q' + (px2 - half * .55) + ' ' + (cy + (y - cy) * 1.05) + ' ' + (mx + 7) + ' ' + y + '" fill="none" stroke="var(--muted)" stroke-width="1.3"/>'; });
+    return s + aster(px1, cy) + aster(px2, cy);
+  }
   var MIT = [
     { n: '間期（G₁期）', d: 'DNA 合成の準備をする時期。染色体は細い糸状で、核の中に広がっている。', dna: 2, f: function () { return cellC(300, 180, 150) + nuc(300, 180, 80) + threads(300, 180, 4, false); } },
     { n: '間期（S期）', d: 'DNA が複製される（合成期）。DNA 量が 2 倍になる。', dna: 3, f: function () { return cellC(300, 180, 150) + nuc(300, 180, 80) + threads(300, 180, 4, true) + '<text x="300" y="300" text-anchor="middle" font-size="14" fill="var(--warm)" font-weight="700">DNA を複製中</text>'; } },
     { n: '間期（G₂期）', d: '分裂の準備をする時期。DNA 量は G₁期の 2 倍。', dna: 4, f: function () { return cellC(300, 180, 150) + nuc(300, 180, 80) + threads(300, 180, 4, true); } },
-    { n: '前期', d: '染色体が太く短く凝縮し、見えるようになる。核膜が消え、紡錘体ができ始める。', dna: 4, f: function () { return cellC(300, 180, 150) + nuc(300, 180, 80, 1) + chrom(270, 150, 0, 1, 30) + chrom(330, 210, 1, 1, -20) + chrom(320, 140, 2, 1, 70) + chrom(270, 215, 3, 1, 10) + '<circle cx="240" cy="70" r="6" fill="var(--c3)"/><circle cx="360" cy="290" r="6" fill="var(--c3)"/>'; } },
+    { n: '前期', d: '染色体が太く短く凝縮し、見えるようになる。核膜が消え、紡錘体ができ始める。', dna: 4, f: function () { return cellC(300, 180, 150) + nuc(300, 180, 80, 1) + chrom(270, 150, 0, 1, 30) + chrom(330, 210, 1, 1, -20) + chrom(320, 140, 2, 1, 70) + chrom(270, 215, 3, 1, 10) + aster(250, 82, 12) + aster(350, 280, 12); } },
     { n: '中期', d: '染色体が細胞の中央（赤道面）に並ぶ。染色体を観察しやすい時期。', dna: 4, f: function () { return cellC(300, 180, 150) + spindle(170, 430, 180, [100, 150, 210, 260]) + chrom(300, 100, 2, 1) + chrom(300, 150, 0, 1) + chrom(300, 214, 1, 1) + chrom(300, 266, 3, 1) + '<line x1="300" y1="40" x2="300" y2="320" stroke="var(--warm)" stroke-dasharray="4 5"/>'; } },
     { n: '後期', d: '染色体が縦に裂けて 2 つに分かれ、紡錘糸に引かれて両極へ移動する。', dna: 4, f: function () { var s = cellC(300, 180, 150) + spindle(170, 430, 180, [180]); [[2, 100], [0, 150], [1, 214], [3, 266]].forEach(function (p) { s += chrom(225, 180 + (p[1] - 180) * .55, p[0], 0, (p[1] - 180) / 4) + chrom(375, 180 + (p[1] - 180) * .55, p[0], 0, -(p[1] - 180) / 4); }); return s; } },
     { n: '終期', d: '両極で核膜ができ、2 つの核になる。細胞質が分かれ始める（動物：くびれる、植物：細胞板）。', dna: 4, f: function () { return '<path d="M300 60 C160 20 40 100 40 180 C40 260 160 340 300 300 C440 340 560 260 560 180 C560 100 440 20 300 60Z" fill="var(--cyto)" stroke="#c9a227" stroke-width="3"/>' + nuc(170, 180, 62, 1) + nuc(430, 180, 62, 1) + [0, 1, 2, 3].map(function (k) { return chrom(140 + k * 20, 180, k, 0) + chrom(400 + k * 20, 180, k, 0); }).join(''); } },
@@ -155,7 +187,7 @@
         var L = list(), p = L[k];
         if (k === L.length - 1) api.task(mode === 'mit' ? 0 : 1);
         if (mode === 'mei' && k === 3) api.task(2);
-        stage.innerHTML = '<svg class="svgfig" viewBox="0 0 600 360" style="max-width:760px"><text x="10" y="24" font-size="18" font-weight="800" fill="var(--ink)" font-family="var(--font-display)">' + p.n + '</text>' + p.f() + '<text x="590" y="350" text-anchor="end" font-size="11" fill="var(--muted)">2n＝4 の細胞（赤・ピンク、青・水色がそれぞれ相同染色体）</text></svg>';
+        stage.innerHTML = '<svg class="svgfig" viewBox="0 0 600 360" style="max-width:760px">' + MDEFS + '<text x="10" y="24" font-size="18" font-weight="800" fill="var(--ink)" font-family="var(--font-display)">' + p.n + '</text>' + p.f() + '<text x="590" y="350" text-anchor="end" font-size="11" fill="var(--muted)">2n＝4 の細胞（赤・ピンク、青・水色がそれぞれ相同染色体）</text></svg>';
         info.innerHTML = '<h4>' + (k + 1) + '/' + L.length + '　' + p.n + '</h4>' + p.d;
         var pts = [], mk;
         L.forEach(function (q, j) { pts.push([j, q.dna]); pts.push([j + 1, q.dna]); if (j === k) mk = { x: j + .5, y: q.dna }; });
@@ -176,11 +208,9 @@
   }
   function geno(a, b) { var s = ''; for (var i = 0; i < a.length; i++) { var x = [a[i], b[i]].sort(); s += x.join(''); } return s; }
   function pheno(g) { var s = ''; for (var i = 0; i < g.length; i += 2) s += g[i] === g[i].toUpperCase() || g[i + 1] === g[i + 1].toUpperCase() ? g[i].toUpperCase() : g[i].toLowerCase(); return s; }
-  function pea(x, y, ph, r) {
-    var round = ph.indexOf('A') >= 0, yellow = ph.length < 2 || ph.indexOf('B') >= 0, fill = yellow ? '#e9c46a' : '#8cbf5a';
-    if (round) return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + fill + '" stroke="var(--ink)" stroke-width="1.2"/>';
-    var d = ''; for (var k = 0; k <= 16; k++) { var a = k / 16 * Math.PI * 2, rr = r * (k % 2 ? .78 : 1); d += (k ? 'L' : 'M') + (x + Math.cos(a) * rr).toFixed(1) + ' ' + (y + Math.sin(a) * rr).toFixed(1); }
-    return '<path d="' + d + 'Z" fill="' + fill + '" stroke="var(--ink)" stroke-width="1.2"/>';
+  /* エンドウの種子（BL.ill.pea：丸／しわ × 黄／緑。seed で 1 粒ずつ形が少しちがう） */
+  function pea(x, y, ph, r, sd) {
+    return BL.ill.pea(x, y, r, { round: ph.indexOf('A') >= 0, yellow: ph.length < 2 || ph.indexOf('B') >= 0, seed: sd || 1 });
   }
   function gcd(a, b) { return b ? gcd(b, a % b) : a; }
   function phName(ph) { var n = []; if (ph.indexOf('A') >= 0) n.push('丸'); else if (ph.indexOf('a') >= 0) n.push('しわ'); if (ph.length > 1) n.push(ph.indexOf('B') >= 0 ? '黄' : '緑'); return '[' + ph + '] ' + n.join('・'); }
@@ -216,16 +246,25 @@
         else if (mode === 'two') { h = [p1[0] + q1[0], p1[1] + q1[1]]; k = [p2[0] + q2[0], p2[1] + q2[1]]; r = .5; }
         else { h = phase === 'cis' ? ['AB', 'ab'] : ['Ab', 'aB']; k = cross === 'test' ? ['ab', 'ab'] : h.slice(); r = rr / 100; }
         var g1 = gametes(h[0], h[1], r), g2 = gametes(k[0], k[1], r), k1 = Object.keys(g1).sort(), k2 = Object.keys(g2).sort();
-        var ph = {}, cw = Math.min(110, 440 / Math.max(k2.length, 1)), chh = Math.min(64, 260 / Math.max(k1.length, 1)), X0 = 110, Y0 = 70;
-        var s = '<svg class="svgfig" viewBox="0 0 ' + (X0 + cw * k2.length + 20) + ' ' + (Y0 + chh * k1.length + 20) + '" style="max-height:440px">';
-        s += '<text x="' + (X0 + cw * k2.length / 2) + '" y="22" text-anchor="middle" font-size="13" fill="var(--muted)">親2 の配偶子</text><text x="10" y="' + (Y0 - 10) + '" font-size="13" fill="var(--muted)">親1 の配偶子</text>';
+        var ph = {}, cw = Math.min(110, 440 / Math.max(k2.length, 1)), chh = Math.min(64, 260 / Math.max(k1.length, 1)), TOP = 176, GW = 130 + cw * k2.length, VW = Math.max(430, GW), X0 = 110 + (VW - GW) / 2, Y0 = 84 + TOP;
+        var s = '<svg class="svgfig" viewBox="0 0 ' + VW + ' ' + (Y0 + chh * k1.length + 20) + '" style="max-height:600px" role="img" aria-label="親のエンドウと交配の表">' + BL.ill.defs('mg');
+        /* 親のエンドウ（株と種子） */
+        var pp1 = pheno(geno(h[0], h[1])), pp2 = pheno(geno(k[0], k[1]));
+        function parent(cx, lab, gt, pp, sd) {
+          return BL.ill.peaPlant(cx - 36, TOP - 30, 136, { seed: sd, round: pp.indexOf('A') >= 0, yellow: pp.length < 2 || pp.indexOf('B') >= 0, closed: 1, flip: sd > 1 }) + pea(cx + 32, TOP - 76, pp, 16, sd + 4) +
+            '<text x="' + (cx + 32) + '" y="' + (TOP - 47) + '" text-anchor="middle" font-size="10.5" fill="var(--muted)">親の種子</text>' +
+            '<text x="' + cx + '" y="' + (TOP - 10) + '" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">' + lab + '　' + gt + '</text><text x="' + cx + '" y="' + (TOP + 6) + '" text-anchor="middle" font-size="12" fill="var(--muted)">' + phName(pp) + '</text>';
+        }
+        s += parent(VW * .26, '親1', mode === 'link' ? h[0] + '/' + h[1] : geno(h[0], h[1]), pp1, 1) + parent(VW * .74, '親2', mode === 'link' ? k[0] + '/' + k[1] : geno(k[0], k[1]), pp2, 2);
+        s += '<text x="' + (VW / 2) + '" y="' + (TOP - 70) + '" text-anchor="middle" font-size="28" fill="var(--ink)">×</text><line x1="10" x2="' + (VW - 10) + '" y1="' + (TOP + 18) + '" y2="' + (TOP + 18) + '" stroke="var(--line)" stroke-dasharray="4 4"/>';
+        s += '<text x="' + (X0 + cw * k2.length / 2) + '" y="' + (Y0 - 48) + '" text-anchor="middle" font-size="13" fill="var(--muted)">親2 の配偶子</text><text x="' + (X0 - 100) + '" y="' + (Y0 - 10) + '" font-size="13" fill="var(--muted)">親1 の配偶子</text>';
         k2.forEach(function (b, j) { s += '<text x="' + (X0 + cw * j + cw / 2) + '" y="' + (Y0 - 24) + '" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">' + b + '</text><text x="' + (X0 + cw * j + cw / 2) + '" y="' + (Y0 - 8) + '" text-anchor="middle" font-size="11" fill="var(--muted)">' + Math.round(g2[b] * 1000) / 10 + '%</text>'; });
         k1.forEach(function (a, i) {
           s += '<text x="' + (X0 - 12) + '" y="' + (Y0 + chh * i + chh / 2) + '" text-anchor="end" font-size="15" font-weight="700" fill="var(--ink)">' + a + '</text><text x="' + (X0 - 12) + '" y="' + (Y0 + chh * i + chh / 2 + 14) + '" text-anchor="end" font-size="11" fill="var(--muted)">' + Math.round(g1[a] * 1000) / 10 + '%</text>';
           k2.forEach(function (b, j) {
             var g = geno(a, b), p = pheno(g), f = g1[a] * g2[b]; ph[p] = (ph[p] || 0) + f;
             var x = X0 + cw * j, y = Y0 + chh * i;
-            s += '<rect x="' + x + '" y="' + y + '" width="' + cw + '" height="' + chh + '" fill="var(--panel)" stroke="var(--line)"/>' + pea(x + 18, y + chh / 2, p, Math.min(13, chh / 3)) + '<text x="' + (x + 36) + '" y="' + (y + chh / 2 + 5) + '" font-size="' + (cw < 80 ? 12 : 14) + '" font-weight="700" fill="var(--ink)">' + g + '</text>';
+            s += '<rect x="' + x + '" y="' + y + '" width="' + cw + '" height="' + chh + '" fill="var(--panel)" stroke="var(--line)"/>' + pea(x + 18, y + chh / 2, p, Math.min(13, chh / 3), i * 7 + j + 1) + '<text x="' + (x + 36) + '" y="' + (y + chh / 2 + 5) + '" font-size="' + (cw < 80 ? 12 : 14) + '" font-weight="700" fill="var(--ink)">' + g + '</text>';
           });
         });
         stage.innerHTML = s + '</svg>';
@@ -236,7 +275,15 @@
         if (sample) {
           var cnt = {}; keys.forEach(function (x) { cnt[x] = 0; });
           for (var t = 0; t < 160; t++) { var u = Math.random(), acc = 0; for (var q = 0; q < keys.length; q++) { acc += ph[keys[q]]; if (u < acc || q === keys.length - 1) { cnt[keys[q]]++; break; } } }
-          html += '<div class="note" style="color:var(--ink)">育てた 160 粒：' + keys.map(function (x) { return phName(x) + ' ' + cnt[x] + ' 粒'; }).join('、') + '<br>理論の比にぴったりではないが、近くなる（数が多いほど近づく）。</div>';
+          /* 160 粒を表現型ごとにならべる */
+          var dfs = BL.ill.defs('ms'), sv = '', row = 0, nn = 0;
+          keys.forEach(function (x) {
+            if (!cnt[x]) return;
+            sv += '<text x="314" y="' + (row * 18 + 13) + '" font-size="14" font-weight="700" fill="var(--ink)">' + phName(x) + '</text><text x="314" y="' + (row * 18 + 31) + '" font-size="15" font-weight="800" fill="var(--accent)" font-family="var(--font-data)">' + cnt[x] + ' 粒</text>';
+            for (var c = 0; c < cnt[x]; c++) { sv += pea(11 + (c % 16) * 18.5, row * 18 + 10 + Math.floor(c / 16) * 18, x, 8, ++nn); }
+            row += Math.max(2, Math.ceil(cnt[x] / 16)) + .35;
+          });
+          html += '<div class="note" style="color:var(--ink)">育てた 160 粒：<svg class="svgfig" viewBox="0 0 410 ' + Math.ceil(row * 18 + 4) + '" style="margin:4px 0">' + dfs + sv + '</svg>理論の比にぴったりではないが、近くなる（数が多いほど近づく）。</div>';
         }
         if (mode === 'link' && cross === 'test') html += '<div class="note">検定交雑なので、子の比 ＝ 親1 の配偶子の比。組換え型（' + (phase === 'cis' ? 'Ab・aB' : 'AB・ab') + '）の割合 ＝ 組換え価 ' + rr + '%</div>';
         out.innerHTML = html;

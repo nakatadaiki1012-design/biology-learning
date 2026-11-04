@@ -18,10 +18,17 @@
       BL.ui.slider(ctl, { label: '基質の濃さ', min: 0, max: 100, value: S, unit: '%', on: function (v) { S = v; gsel = 2; upd(); } });
       BL.ui.seg(ctl, '比べる', [[false, 'なし'], [true, '無機触媒も']], cmp, function (v) { cmp = v; upd(); });
       var m = BL.ui.meter(ctl, ['反応の速さ', '基質 → 生成物', '酵素のようす']);
-      var cv = BL.el('canvas', { width: 520, height: 210, style: 'width:100%;max-width:640px;border-radius:4px;background:var(--water);' + (BL.narrow() ? 'max-height:34%;object-fit:contain' : '') });
+      /* 粒子のようす（SVG のイラスト：酵素・基質・生成物・酵素-基質複合体・変性した酵素） */
+      var cv = BL.el('div', { style: 'width:100%;max-width:640px;border-radius:4px;overflow:hidden;background:var(--water);' + (BL.narrow() ? 'max-height:34%' : '') });
+      cv.width = 520; cv.height = 210;
+      var I = BL.ill, EZ = '';
+      for (var q = 0; q < 6; q++) EZ += '<g id="ez-f' + q + '">' + I.enzyme({ seed: q + 3 }) + '</g><g id="ez-b' + q + '">' + I.enzyme({ seed: q + 3, state: 'bound' }) + '</g><g id="ez-u' + q + '">' + I.enzyme({ seed: q + 3, state: 'unf', unf: .55 }) + '</g><g id="ez-d' + q + '">' + I.enzyme({ seed: q + 3, state: 'denat' }) + '</g>';
+      EZ += '<g id="ez-s">' + I.substrate({ at: -7 }) + '</g><g id="ez-p">' + I.product() + '</g>';
+      cv.innerHTML = '<svg viewBox="0 0 520 210" style="display:block;width:100%;height:auto">' + I.lifeDefs() + '<defs>' + EZ + '</defs><g class="ez-dyn"></g></svg>';
+      var dyn = cv.querySelector('.ez-dyn');
       var gwrap = BL.el('div', { style: 'display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%' });
       var col = BL.el('div', { style: 'display:flex;flex-direction:column;gap:8px;width:100%;align-items:center' }); col.appendChild(cv); col.appendChild(gwrap); stage.appendChild(col);
-      var ctx = cv.getContext('2d'), parts = [], enz = [], prods = [];
+      var parts = [], enz = [], prods = [];
       for (var i = 0; i < 6; i++) enz.push({ x: 60 + i * 80, y: 60 + (i % 2) * 90, vx: Math.random() - .5, vy: Math.random() - .5, a: Math.random() * 6, busy: 0 });
       function rate() { var Km = 25; return act(T, pH, ENZ[e].ph) * S / (Km + S) * (100 + 25) / 100; }
       function upd() {
@@ -43,32 +50,26 @@
         if (BL.narrow()) { gwrap.style.gridTemplateColumns = '1fr'; gwrap.innerHTML = '<div style="max-width:290px;margin:0 auto;width:100%">' + gs[gsel].replace('viewBox="0 0 240 170"', 'viewBox="0 0 240 170"') + '</div>'; }
         else gwrap.innerHTML = gs.map(function (g) { return '<div>' + g + '</div>'; }).join('');
       }
-      var css = getComputedStyle(document.documentElement);
-      function C(n) { return css.getPropertyValue(n).trim() || '#888'; }
       var stop = BL.loop(function (dt) {
         var W = cv.width, H = cv.height, want = Math.round(S / 3), r = rate(), dead = T >= 60, spd = .4 + T / 40;
-        while (parts.length < want) parts.push({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * 40, vy: (Math.random() - .5) * 40 });
+        while (parts.length < want) parts.push({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * 40, vy: (Math.random() - .5) * 40, a: Math.random() * 360, va: (Math.random() - .5) * 90 });
         while (parts.length > want) parts.pop();
-        ctx.clearRect(0, 0, W, H);
-        parts.forEach(function (p) { p.x += p.vx * dt * spd; p.y += p.vy * dt * spd; if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1; });
-        enz.forEach(function (z) {
-          z.x += z.vx * 30 * dt * spd; z.y += z.vy * 30 * dt * spd; if (z.x < 30 || z.x > W - 30) z.vx *= -1; if (z.y < 30 || z.y > H - 30) z.vy *= -1;
-          if (z.busy > 0) { z.busy -= dt; if (z.busy <= 0) { prods.push({ x: z.x, y: z.y, t: 1.6, vx: 30, vy: -20 }, { x: z.x, y: z.y, t: 1.6, vx: -30, vy: 20 }); } }
+        var out = '', unf = T >= 60 ? 'd' : T >= 47 ? 'u' : '';
+        parts.forEach(function (p) { p.x += p.vx * dt * spd; p.y += p.vy * dt * spd; p.a += p.va * dt * spd; if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1; });
+        enz.forEach(function (z, zi) {
+          z.x += z.vx * 30 * dt * spd; z.y += z.vy * 30 * dt * spd; if (z.x < 34 || z.x > W - 34) z.vx *= -1; if (z.y < 34 || z.y > H - 50) z.vy *= -1;
+          z.a += (z.va || (z.va = (Math.random() - .5) * .8)) * dt * spd;
+          if (z.busy > 0) { z.busy -= dt; if (z.busy <= 0) { var ca = Math.cos(z.a), sa = Math.sin(z.a), bx = z.x + ca * 34, by = z.y + sa * 34; prods.push({ x: bx - ca * 6, y: by - sa * 6, t: 1.6, vx: 30 * ca - 20 * sa, vy: 30 * sa + 20 * ca, a: Math.random() * 360 }, { x: bx + ca * 6, y: by + sa * 6, t: 1.6, vx: 34 * ca + 18 * sa, vy: 34 * sa - 18 * ca, a: Math.random() * 360 }); } }
           else if (!dead) {
-            for (var i = 0; i < parts.length; i++) { var p = parts[i]; if (Math.hypot(p.x - z.x, p.y - z.y) < 26 && Math.random() < r * 0.5) { z.busy = .35; parts.splice(i, 1); break; } }
+            for (var i = 0; i < parts.length; i++) { var p = parts[i]; if (Math.hypot(p.x - z.x, p.y - z.y) < 36 && Math.random() < r * 0.5) { z.busy = .45; parts.splice(i, 1); break; } }
           }
-          ctx.save(); ctx.translate(z.x, z.y); ctx.rotate(z.a); ctx.fillStyle = C('--accent'); ctx.beginPath();
-          if (dead) { for (var k = 0; k <= 12; k++) { var aa = k / 12 * Math.PI * 2, rr = 18 + Math.sin(k * 3) * 6; ctx.lineTo(Math.cos(aa) * rr, Math.sin(aa) * rr); } ctx.globalAlpha = .45; }
-          else { ctx.arc(0, 0, 20, 0.45, Math.PI * 2 - 0.45); ctx.lineTo(4, 0); }
-          ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
-          if (z.busy > 0) { ctx.fillStyle = C('--warm'); ctx.beginPath(); ctx.arc(10, 0, 7, 0, 7); ctx.fill(); }
-          ctx.restore();
+          var id = dead ? 'd' : z.busy > 0 ? 'b' : unf || 'f';
+          out += '<use href="#ez-' + id + (zi % 6) + '" transform="translate(' + z.x.toFixed(1) + ' ' + z.y.toFixed(1) + ') rotate(' + (z.a * 57.3).toFixed(1) + ') scale(1.45)"/>';
         });
-        ctx.fillStyle = C('--warm'); parts.forEach(function (p) { ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, 7); ctx.fill(); });
-        ctx.fillStyle = C('--c3');
-        prods = prods.filter(function (p) { p.t -= dt; p.x += p.vx * dt; p.y += p.vy * dt; ctx.globalAlpha = Math.max(0, p.t / 1.6); ctx.beginPath(); ctx.arc(p.x, p.y, 4.5, 0, 7); ctx.fill(); return p.t > 0; });
-        ctx.globalAlpha = 1; ctx.fillStyle = C('--ink'); ctx.font = '12px sans-serif';
-        ctx.fillText('緑＝酵素　オレンジ＝基質　青＝生成物', 8, H - 8);
+        parts.forEach(function (p) { out += '<use href="#ez-s" transform="translate(' + p.x.toFixed(1) + ' ' + p.y.toFixed(1) + ') rotate(' + p.a.toFixed(0) + ') scale(1.1)"/>'; });
+        prods = prods.filter(function (p) { p.t -= dt; p.x += p.vx * dt; p.y += p.vy * dt; out += '<use href="#ez-p" opacity="' + Math.max(0, Math.min(1, p.t / .8)).toFixed(2) + '" transform="translate(' + p.x.toFixed(1) + ' ' + p.y.toFixed(1) + ') rotate(' + (p.a += dt * 40).toFixed(0) + ')"/>'; return p.t > 0; });
+        var lg = '<rect x="4" y="' + (H - 26) + '" width="318" height="22" rx="4" fill="var(--panel)" opacity=".82"/><g font-size="12" fill="var(--ink)" paint-order="stroke" stroke="var(--water)" stroke-width="3"><use href="#ez-f0" transform="translate(16 ' + (H - 13) + ') scale(.42)"/><text x="28" y="' + (H - 9) + '">酵素</text><use href="#ez-s" transform="translate(78 ' + (H - 13) + ') scale(.7)"/><text x="94" y="' + (H - 9) + '">基質</text><use href="#ez-b0" transform="translate(140 ' + (H - 13) + ') scale(.42)"/><text x="158" y="' + (H - 9) + '">酵素-基質複合体</text><use href="#ez-p" transform="translate(268 ' + (H - 13) + ') scale(.8)"/><text x="278" y="' + (H - 9) + '">生成物</text>' + (dead ? '<text x="' + (W - 8) + '" y="18" text-anchor="end" font-weight="700" fill="var(--warm)">高温で立体構造がこわれた（変性・失活）</text>' : unf ? '<text x="' + (W - 8) + '" y="18" text-anchor="end" font-weight="700" fill="var(--warm)">立体構造がくずれ始めている</text>' : '') + '</g>';
+        dyn.innerHTML = out + lg;
       });
       upd();
       return stop;

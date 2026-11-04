@@ -179,28 +179,46 @@
     { n: 'ゾウリムシ', s: 2.2e-4, sh: 'para' }, { n: 'カエルの卵', s: 2.5e-3, sh: 'frog' }, { n: 'ニワトリの卵黄（1つの細胞）', s: 3e-2, sh: 'yolk' }, { n: 'メダカ', s: 3.5e-2, sh: 'fish' }, { n: 'ヒト', s: 1.7, sh: 'human' }
   ];
   (function () { var x = 0; OBJ.forEach(function (o, i) { if (i) x += (OBJ[i - 1].s + o.s) * .62; o.x = x; }); })();
+  /* 拡大図の形：どれも「大きさ＝100」の座標でかき、use で拡大・縮小して置く（くわしいイラストは js/illust-life.js） */
+  function scaleDefs() {
+    var I = BL.ill, k, s = '', d;
+    function c(x, y, r, a) { return '<circle cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="' + r + '" ' + a + '/>'; }
+    var g = '<radialGradient id="sc-atom" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#2f5f9e" stop-opacity=".55"/><stop offset=".45" stop-color="#7fb2e5" stop-opacity=".35"/><stop offset="1" stop-color="#cfe0f3" stop-opacity=".12"/></radialGradient>' +
+      '<radialGradient id="sc-mit" cx=".45" cy=".35" r=".7"><stop offset="0" stop-color="#fde3cc"/><stop offset="1" stop-color="#f1a878"/></radialGradient>' +
+      '<radialGradient id="sc-chl" cx=".45" cy=".35" r=".7"><stop offset="0" stop-color="#e4f4cf"/><stop offset="1" stop-color="#9fd07e"/></radialGradient>' +
+      '<radialGradient id="sc-rib" cx=".4" cy=".3" r=".75"><stop offset="0" stop-color="#cdb6e6"/><stop offset="1" stop-color="#6b4a8a"/></radialGradient>';
+    /* 水素原子：電子の雲と原子核 */
+    s += '<g id="sc-atom-g"><circle r="50" fill="url(#sc-atom)"/><circle r="50" fill="none" stroke="#2f5f9e" stroke-width=".8" stroke-dasharray="2 3"/><circle r="4" fill="#c0392b"/><circle cx="-1.2" cy="-1.2" r="1.4" fill="#f5a5a0"/><circle cx="31" cy="-22" r="2.4" fill="#2f5f9e"/></g>';
+    /* グルコース（環状構造：C 5 個と O 1 個の六員環） */
+    d = ''; var ring = [];
+    for (k = 0; k < 6; k++) { var a = k / 6 * Math.PI * 2 - Math.PI / 2; ring.push([Math.cos(a) * 26, Math.sin(a) * 26]); }
+    ring.forEach(function (p, i) { var q = ring[(i + 1) % 6]; d += '<line x1="' + p[0].toFixed(1) + '" y1="' + p[1].toFixed(1) + '" x2="' + q[0].toFixed(1) + '" y2="' + q[1].toFixed(1) + '" stroke="#8a7a5a" stroke-width="4"/>'; });
+    ring.forEach(function (p, i) { if (i === 0) return; var ox = p[0] * 1.62, oy = p[1] * 1.62; d += '<line x1="' + p[0].toFixed(1) + '" y1="' + p[1].toFixed(1) + '" x2="' + ox.toFixed(1) + '" y2="' + oy.toFixed(1) + '" stroke="#8a7a5a" stroke-width="3"/>' + c(ox, oy, 6, i === 5 ? 'fill="#555"' : 'fill="#e0533a"'); });
+    ring.forEach(function (p, i) { d += c(p[0], p[1], i === 0 ? 8.5 : 8, i === 0 ? 'fill="#e0533a"' : 'fill="#4a4a4a"'); });
+    s += '<g id="sc-mol-g">' + d + '<g opacity=".35">' + ring.map(function (p) { return c(p[0] - 2.5, p[1] - 2.5, 3, 'fill="#fff"'); }).join('') + '</g></g>';
+    /* DNA（二重らせん：幅 2 nm、1 回転 3.4 nm） */
+    d = ''; var s1 = '', s2 = '', col = ['#e07a5f', '#e9c46a', '#6fa35a', '#5e8fc4'];
+    for (var y = -125; y <= 125; y += 2.5) { var ph = y / 170 * Math.PI * 2; s1 += (y > -125 ? 'L' : 'M') + (Math.sin(ph) * 40).toFixed(1) + ' ' + y.toFixed(1); s2 += (y > -125 ? 'L' : 'M') + (-Math.sin(ph) * 40).toFixed(1) + ' ' + y.toFixed(1); }
+    for (y = -120; y <= 120; y += 17) { ph = y / 170 * Math.PI * 2; var x1 = Math.sin(ph) * 40, kk = Math.abs(Math.round(y / 17)) % 4; d += '<line x1="' + x1.toFixed(1) + '" y1="' + y + '" x2="0" y2="' + y + '" stroke="' + col[kk] + '" stroke-width="5"/><line x1="0" y1="' + y + '" x2="' + (-x1).toFixed(1) + '" y2="' + y + '" stroke="' + col[3 - kk] + '" stroke-width="5"/>'; }
+    s += '<g id="sc-dna-g">' + d + '<path d="' + s1 + '" fill="none" stroke="#6b4a8a" stroke-width="9" stroke-linecap="round"/><path d="' + s2 + '" fill="none" stroke="#b07ad0" stroke-width="9" stroke-linecap="round"/></g>';
+    /* ヘモグロビン（4 つのサブユニット＋ヘム） */
+    s += '<g id="sc-prot-g">' + [[-18, -16, '#e9a3a3'], [18, -16, '#d98585'], [-18, 16, '#d98585'], [18, 16, '#e9a3a3']].map(function (q, i) { return c(q[0], q[1], 27, 'fill="' + q[2] + '" stroke="#a04040" stroke-width="1.2"') + '<rect x="' + (q[0] - 6 + (i % 2 ? 4 : -4)) + '" y="' + (q[1] - 3) + '" width="12" height="6" rx="1.5" fill="#b0201a" transform="rotate(' + (i * 35) + ' ' + q[0] + ' ' + q[1] + ')"/>'; }).join('') + '<circle r="50" fill="url(#lf-sph)" opacity=".5"/></g>';
+    /* リボソーム（大小 2 つのサブユニットと mRNA） */
+    s += '<g id="sc-ribo-g"><path d="M-62 15C-40 9 -20 21 0 15S40 9 62 15" fill="none" stroke="#d08a1e" stroke-width="3.5"/><ellipse cx="0" cy="-10" rx="50" ry="32.5" fill="url(#sc-rib)" stroke="#4a3466" stroke-width="1.2"/><ellipse cx="0" cy="27.5" rx="37.5" ry="17.5" fill="#c4a8e0" stroke="#4a3466" stroke-width="1.2"/><path d="M-4 -40c-6 -6 4 -10 -2 -16s4 -8 0 -12" fill="none" stroke="#3b7a3a" stroke-width="3" stroke-linecap="round"/></g>';
+    /* ミトコンドリア（外膜・内膜・クリステ） */
+    d = '<rect x="-50" y="-12.5" width="100" height="25" rx="12.5" fill="#f3b38a" stroke="#a0522d" stroke-width="1"/><rect x="-47.5" y="-10" width="95" height="20" rx="10" fill="url(#sc-mit)" stroke="#a0522d" stroke-width=".7"/>';
+    for (k = 0; k < 10; k++) { var xx = -38 + k * 8.4, top = k % 2 === 0; d += '<rect x="' + (xx - 1.6).toFixed(1) + '" y="' + (top ? -10.4 : -2.6) + '" width="3.2" height="13" rx="1.6" fill="#f3b38a" stroke="#a0522d" stroke-width=".55"/>'; }
+    s += '<g id="sc-mito-g">' + d + '<circle cx="-30" cy="4" r="1.6" fill="none" stroke="#6b4a8a" stroke-width=".5"/></g>';
+    /* 葉緑体（二重膜・グラナ・ストロマ） */
+    d = '<ellipse rx="50" ry="22.5" fill="#7fbf68" stroke="#2f6b3a" stroke-width="1"/><ellipse rx="47.5" ry="20.3" fill="url(#sc-chl)" stroke="#2f6b3a" stroke-width=".6"/><path d="M-40 -2C-20 -8 20 4 40 -2M-38 8C-14 2 14 12 38 6M-34 -10C-14 -14 14 -6 34 -12" fill="none" stroke="#4f9a3a" stroke-width="1"/>';
+    [[-32, 0], [-18, -8], [-16, 9], [0, -2], [14, -10], [17, 8], [31, 0]].forEach(function (q) { for (var j = 0; j < 5; j++) d += '<rect x="' + (q[0] - 5) + '" y="' + (q[1] - 6 + j * 2.5).toFixed(1) + '" width="10" height="2.2" rx="1.1" fill="#3f8a34" stroke="#2f6b3a" stroke-width=".35"/>'; });
+    s += '<g id="sc-chl-g">' + d + '<ellipse cx="-6" cy="12" rx="5" ry="2.6" fill="#f6f4e0" stroke="#b8b090" stroke-width=".4"/></g>';
+    /* 生物のイラスト */
+    s += '<g id="sc-rod-g">' + I.ecoli() + '</g><g id="sc-virus-g">' + I.virus() + '</g><g id="sc-rbc-g">' + I.rbc() + '</g><g id="sc-cell-g">' + I.cheek() + '</g><g id="sc-egg-g">' + I.egg() + '</g><g id="sc-para-g">' + I.paramecium() + '</g><g id="sc-frog-g">' + I.frogEgg({ jelly: false }) + '</g><g id="sc-yolk-g">' + I.yolk() + '</g><g id="sc-fish-g">' + I.medaka() + '</g><g id="sc-human-g">' + I.human() + '</g>';
+    return '<defs>' + g + s + '</defs>';
+  }
   function shape(o, cx, cy, d) {
-    var r = d / 2, s = '';
-    switch (o.sh) {
-      case 'atom': return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#cfe0f3" stroke="#2f5f9e" stroke-width="' + Math.max(.5, r * .04) + '"/><circle cx="' + cx + '" cy="' + cy + '" r="' + Math.max(.6, r * .08) + '" fill="#c0392b"/>';
-      case 'mol': for (var k = 0; k < 6; k++) { var a = k / 6 * Math.PI * 2; s += (k ? 'L' : 'M') + (cx + Math.cos(a) * r * .7).toFixed(2) + ' ' + (cy + Math.sin(a) * r * .7).toFixed(2); } return '<path d="' + s + 'Z" fill="#f5e3a8" stroke="#8a6a1a" stroke-width="' + Math.max(.5, r * .08) + '"/>';
-      case 'dna': for (k = 0; k <= 20; k++) { var yy = cy - r * 2.5 + k * r * .25; s += '<circle cx="' + (cx + Math.sin(k * .6) * r * .8) + '" cy="' + yy + '" r="' + r * .18 + '" fill="#6b4a8a"/><circle cx="' + (cx - Math.sin(k * .6) * r * .8) + '" cy="' + yy + '" r="' + r * .18 + '" fill="#e07a5f"/>'; } return s;
-      case 'prot': return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#e6a1a1" stroke="#a04040" stroke-width="' + Math.max(.4, r * .05) + '"/><circle cx="' + (cx - r * .4) + '" cy="' + (cy - r * .3) + '" r="' + r * .45 + '" fill="#d98080"/><circle cx="' + (cx + r * .4) + '" cy="' + (cy + r * .3) + '" r="' + r * .45 + '" fill="#d98080"/>';
-      case 'ribo': return '<ellipse cx="' + cx + '" cy="' + (cy - r * .2) + '" rx="' + r + '" ry="' + r * .65 + '" fill="#8a6aa8"/><ellipse cx="' + cx + '" cy="' + (cy + r * .55) + '" rx="' + r * .75 + '" ry="' + r * .35 + '" fill="#b79ad0"/>';
-      case 'virus': for (k = 0; k < 16; k++) { a = k / 16 * Math.PI * 2; s += '<line x1="' + (cx + Math.cos(a) * r * .8) + '" y1="' + (cy + Math.sin(a) * r * .8) + '" x2="' + (cx + Math.cos(a) * r) + '" y2="' + (cy + Math.sin(a) * r) + '" stroke="#7a4fa0" stroke-width="' + Math.max(.5, r * .07) + '"/>'; } return s + '<circle cx="' + cx + '" cy="' + cy + '" r="' + r * .8 + '" fill="#d7c2ea" stroke="#7a4fa0" stroke-width="' + Math.max(.5, r * .05) + '"/>';
-      case 'mito': return '<rect x="' + (cx - r) + '" y="' + (cy - r * .25) + '" width="' + d + '" height="' + r * .5 + '" rx="' + r * .25 + '" fill="' + MIT + '" stroke="' + MITL + '" stroke-width="' + Math.max(.5, r * .03) + '"/>';
-      case 'rod': return '<rect x="' + (cx - r) + '" y="' + (cy - r * .25) + '" width="' + d + '" height="' + r * .5 + '" rx="' + r * .25 + '" fill="#b8d99a" stroke="#3b7a3a" stroke-width="' + Math.max(.5, r * .03) + '"/><path d="M' + (cx + r) + ' ' + cy + ' q' + r * .3 + ' -' + r * .2 + ' ' + r * .6 + ' 0 t' + r * .6 + ' 0" fill="none" stroke="var(--ink)" stroke-width="' + Math.max(.4, r * .02) + '"/>';
-      case 'chl': return '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + r + '" ry="' + r * .45 + '" fill="' + CHL + '" stroke="' + CHLD + '" stroke-width="' + Math.max(.5, r * .03) + '"/>';
-      case 'rbc': return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#d9534f"/><circle cx="' + cx + '" cy="' + cy + '" r="' + r * .45 + '" fill="#e88a87"/>';
-      case 'cell': for (k = 0; k < 7; k++) { a = k / 7 * Math.PI * 2 + .3; var rr = r * (.85 + rnd(k) * .15); s += (k ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1); } return '<path d="' + s + 'Z" fill="var(--cyto)" stroke="' + MEM + '" stroke-width="' + Math.max(.5, r * .02) + '"/><circle cx="' + cx + '" cy="' + cy + '" r="' + r * .15 + '" fill="var(--nuc)" stroke="' + NUC + '" stroke-width="' + Math.max(.4, r * .02) + '"/>';
-      case 'egg': return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#f6ead0" stroke="#c9a227" stroke-width="' + Math.max(.5, r * .05) + '"/><circle cx="' + cx + '" cy="' + cy + '" r="' + r * .2 + '" fill="var(--nuc)"/>';
-      case 'para': return '<path d="M' + (cx - r) + ' ' + cy + ' C' + (cx - r) + ' ' + (cy - r * .35) + ' ' + (cx + r * .6) + ' ' + (cy - r * .4) + ' ' + (cx + r) + ' ' + (cy - r * .05) + ' C' + (cx + r * .7) + ' ' + (cy + r * .35) + ' ' + (cx - r * .8) + ' ' + (cy + r * .38) + ' ' + (cx - r) + ' ' + cy + 'Z" fill="#cfe6b8" stroke="#5a8a3a" stroke-width="' + Math.max(.5, r * .02) + '"/>';
-      case 'frog': return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#e8e0c8" stroke="#8a7a5a" stroke-width="' + Math.max(.5, r * .03) + '"/><path d="M' + (cx - r) + ' ' + cy + ' A' + r + ' ' + r + ' 0 0 1 ' + (cx + r) + ' ' + cy + 'Z" fill="#4a3a30"/>';
-      case 'yolk': return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#f3c34a" stroke="#c08a1a" stroke-width="' + Math.max(.5, r * .02) + '"/>';
-      case 'fish': return '<path d="M' + (cx - r) + ' ' + cy + ' C' + (cx - r * .5) + ' ' + (cy - r * .3) + ' ' + (cx + r * .4) + ' ' + (cy - r * .25) + ' ' + (cx + r * .7) + ' ' + cy + ' L' + (cx + r) + ' ' + (cy - r * .2) + ' L' + (cx + r) + ' ' + (cy + r * .2) + ' L' + (cx + r * .7) + ' ' + cy + ' C' + (cx + r * .4) + ' ' + (cy + r * .25) + ' ' + (cx - r * .5) + ' ' + (cy + r * .3) + ' ' + (cx - r) + ' ' + cy + 'Z" fill="#e9b872" stroke="#8a5a2a" stroke-width="' + Math.max(.5, r * .02) + '"/><circle cx="' + (cx - r * .72) + '" cy="' + (cy - r * .05) + '" r="' + r * .05 + '" fill="#222"/>';
-      case 'human': var h = d, w = h * .26, top = cy - h / 2; return '<circle cx="' + cx + '" cy="' + (top + h * .07) + '" r="' + h * .065 + '" fill="#d9b48f"/><path d="M' + (cx - w / 2) + ' ' + (top + h * .15) + ' h' + w + ' l' + (-w * .1) + ' ' + h * .38 + ' h' + (-w * .25) + ' l' + (-w * .05) + ' ' + h * .45 + ' h' + (-w * .2) + ' l' + (-w * .05) + ' ' + (-h * .45) + ' h' + (-w * .25) + 'z" fill="#5b7fa8"/>';
-    }
-    return '';
+    return '<use href="#sc-' + o.sh + '-g" transform="translate(' + cx.toFixed(2) + ' ' + cy.toFixed(2) + ') scale(' + (d / 100).toPrecision(5) + ')"/>';
   }
   function fmtLen(m) {
     var u = [[1, 'm'], [1e-2, 'cm'], [1e-3, 'mm'], [1e-6, 'μm'], [1e-9, 'nm']];
@@ -223,13 +241,17 @@
       BL.ui.btn(r2, '🔍 原子 → ヒト まで自動ズーム', function () { z = -9.5; target = .82; }, 'main');
       var info = BL.ui.box(ctl, 'info', '');
       var W = BL.narrow() ? 420 : 640, H = 340;
+      stage.innerHTML = '<svg class="svgfig" viewBox="0 0 ' + W + ' ' + H + '" style="max-width:860px">' + BL.ill.lifeDefs() + scaleDefs() + '<rect width="' + W + '" height="' + H + '" fill="var(--panel)"/><g class="sc-dyn"></g></svg>';
+      var dyn = stage.querySelector('.sc-dyn'), drawnZ = null;
       var stop = BL.loop(function (dt) {
         if (Math.abs(target - z) > .002) { z += (target - z) * Math.min(1, dt * 3.2); if (Math.abs(target - z) < .003) z = target; sl.set(z); }
+        if (z === drawnZ) return;
+        drawnZ = z;
         var F = Math.pow(10, z), focusS = F / 4, lf = Math.log10(focusS), fi = 0;
         for (var i = 0; i < OBJ.length - 1; i++) { var a = Math.log10(OBJ[i].s), b = Math.log10(OBJ[i + 1].s); if (lf >= a) fi = i + Math.min(1, (lf - a) / (b - a)); }
         if (lf < Math.log10(OBJ[0].s)) fi = 0;
         var i0 = Math.floor(fi), t = fi - i0, cxm = i0 < OBJ.length - 1 ? OBJ[i0].x + (OBJ[i0 + 1].x - OBJ[i0].x) * t : OBJ[i0].x;
-        var px = W / F, used = [], s = '<svg class="svgfig" viewBox="0 0 ' + W + ' ' + H + '" style="max-width:860px"><rect width="' + W + '" height="' + H + '" fill="var(--panel)"/>', labs = '';
+        var px = W / F, used = [], s = '', labs = '';
         OBJ.slice().reverse().forEach(function (o) {
           var d = o.s * px, cx = W / 2 + (o.x - cxm) * px, cy = 150, tall = { dna: 5, rod: .5, mito: .5, chl: .9, para: .8, fish: .6 }[o.sh] || 1;
           if (d < .4 || d * tall > 290 || d > W * .95 || cx + d < 0 || cx - d > W) return;
@@ -246,7 +268,7 @@
         s += '<rect x="' + rxp(1e-10) + '" y="' + (ry - 6) + '" width="' + (rxp(2e-7) - rxp(1e-10)) + '" height="6" fill="var(--c6)" opacity=".6"/><rect x="' + rxp(2e-7) + '" y="' + (ry - 6) + '" width="' + (rxp(1e-4) - rxp(2e-7)) + '" height="6" fill="var(--c3)" opacity=".6"/><rect x="' + rxp(1e-4) + '" y="' + (ry - 6) + '" width="' + (rxp(3) - rxp(1e-4)) + '" height="6" fill="var(--accent)" opacity=".6"/>';
         [[1e-9, '1nm'], [1e-6, '1μm'], [1e-3, '1mm'], [1, '1m']].forEach(function (m) { s += '<text x="' + rxp(m[0]) + '" y="' + (ry + 13) + '" text-anchor="middle" font-size="11" fill="var(--muted)">' + m[1] + '</text>'; });
         s += '<polygon points="' + (rxp(focusS) - 6) + ',' + (ry - 14) + ' ' + (rxp(focusS) + 6) + ',' + (ry - 14) + ' ' + rxp(focusS) + ',' + (ry - 6) + '" fill="var(--warm)"/>';
-        stage.innerHTML = s + '</svg>';
+        dyn.innerHTML = s;
         var near = OBJ[Math.min(OBJ.length - 1, Math.round(fi))];
         var msg = '<h4>' + near.n + '：' + fmtLen(near.s) + '</h4>見ている幅 ' + fmtLen(F) + '（' + sc[0] + '）';
         if (info._m !== msg) { info.innerHTML = msg; info._m = msg; }
