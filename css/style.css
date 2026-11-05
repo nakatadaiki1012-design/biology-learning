@@ -562,3 +562,24 @@ ol.pkey li { margin-bottom: 6px; }
 .card .photov .phimg { max-height: 260px; min-height: 160px; }
 @media (max-width: 760px) { .toast { top: 52px; bottom: auto; font-size: 13px; padding: 6px 12px; } }
 .ctl > * { flex-shrink: 0; }
+
+/* ⛶ 大きく見る */
+.stage, .sfig { position: relative; }
+.maxbtn { position: absolute; top: 6px; right: 6px; z-index: 6; width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line); background: var(--glass); font-size: 17px; line-height: 1; display: grid; place-items: center; }
+.is-max { position: fixed !important; inset: 0; z-index: 80; margin: 0 !important; border-radius: 0 !important; background: var(--panel) !important; padding: 8px max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)) !important; display: flex !important; flex-direction: column; }
+.is-max > .stage-in, .is-max .mbody, .is-max .figbox { flex: 1 1 auto; min-height: 0; }
+.is-max .stage-in > svg, .is-max .figbox svg { width: 100%; height: 100%; max-height: none !important; }
+.is-max .simwrap .ctl { max-height: 32vh; }
+@media (orientation: landscape) and (max-height: 520px) { .is-max .simwrap { flex-direction: row; } .is-max .simwrap .stage-in { flex: 1.6; } .is-max .simwrap .ctl { max-height: none; flex: 1; border-top: 0; border-left: 1px solid var(--line); padding: 0 0 0 8px; } }
+body.has-max .toast { z-index: 95; }
+.see.is-max { grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(0, 1fr); gap: 8px; }
+.see.is-max .lib, .see.is-max .seebar { display: none !important; }
+.see.is-max .card-head .lead { display: none; }
+@media (max-width: 760px) and (orientation: portrait) {
+  .see.is-max { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 42%); }
+  .is-max::before { content: "📱 横向きにすると、もっと大きく見えます"; position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 7; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--glass); padding: 3px 10px; border-radius: 999px; white-space: nowrap; pointer-events: none; animation: fadehint 4s forwards; }
+}
+@media (orientation: landscape) and (max-height: 520px) { .see.is-max { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); } .see.is-max .card-head { display: none; } }
+@keyframes fadehint { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+.see.is-max .card, .see.is-max .stage { grid-column: auto !important; grid-row: auto !important; }
+.see.is-max { display: grid !important; }

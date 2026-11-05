@@ -4,7 +4,7 @@
   var S = BL.store;
   function clean() {
     if (cleanup) { try { cleanup(); } catch (e) {} cleanup = null; }
-    document.onkeydown = null;
+    document.onkeydown = null; document.body.classList.remove('has-max');
     document.querySelectorAll('.toast, .bigmark').forEach(function (x) { x.remove(); });
   }
   function toast(msg) { document.querySelectorAll('.toast').forEach(function (x) { x.remove(); }); var t = BL.el('div', { class: 'toast' }, msg); document.body.appendChild(t); setTimeout(function () { t.remove(); }, 2600); }
@@ -88,6 +88,18 @@
     return box;
   }
 
+  /* ⛶ 大きく見る（図・実験・アニメを画面いっぱいに。スマホは横向きがおすすめ） */
+  function maxBtn(box, target) {
+    target = target || box;
+    var b = BL.el('button', { class: 'maxbtn', title: '大きく見る', 'aria-label': '大きく見る' }, '⛶');
+    b.addEventListener('click', function () {
+      var on = !target.classList.contains('is-max'); target.classList.toggle('is-max', on); b.textContent = on ? '✕' : '⛶'; b.title = on ? 'もとにもどす' : '大きく見る';
+      document.body.classList.toggle('has-max', on);
+    });
+    box.appendChild(b); return b;
+  }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { var m = document.querySelector('.is-max .maxbtn'); if (m) m.click(); } });
+
   /* ========== 見る ========== */
   function simApi(sim, onTask) {
     return { task: function (i) {
@@ -119,7 +131,7 @@
       b.addEventListener('click', function () { location.hash = '#see/' + s.id; });
       lib.appendChild(b);
     });
-    var stage = BL.el('section', { class: 'stage panel' }), sin = BL.el('div', { class: 'stage-in' }); stage.appendChild(sin);
+    var stage = BL.el('section', { class: 'stage panel' }), sin = BL.el('div', { class: 'stage-in' }); stage.appendChild(sin); maxBtn(stage, wrap);
     var card = BL.el('aside', { class: 'card panel' });
     card.innerHTML = '<div class="card-head"><div class="eyebrow">' + BL.SUBJ[sim.subj] + '・' + sim.cat + '</div><h2 class="name">' + sim.name + '</h2><p class="lead">' + sim.lead + '</p></div>';
     var tabs = BL.el('div', { class: 'tabs', role: 'tablist' }); card.appendChild(tabs);
@@ -267,7 +279,7 @@
         var t = BL.el('div', { class: 'stext panel' }, '<h3>' + sl.h + '</h3>' + sl.html); g.appendChild(t);
         if (sl.ask) t.appendChild(askBox(sl.ask, l, k));
         if (hasFig) {
-          var f = BL.el('div', { class: 'sfig panel' }); g.appendChild(f);
+          var f = BL.el('div', { class: 'sfig panel' }); g.appendChild(f); maxBtn(f);
           var body = BL.el('div', { class: 'mbody' }), cur = 0;
           if (media.length > 1) {
             var mt = BL.el('div', { class: 'mtabs', role: 'tablist' }); f.appendChild(mt);
