@@ -583,3 +583,5 @@ body.has-max .toast { z-index: 95; }
 @keyframes fadehint { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 .see.is-max .card, .see.is-max .stage { grid-column: auto !important; grid-row: auto !important; }
 .see.is-max { display: grid !important; }
+.backtext { display: none; }
+@media (max-width: 760px) { .slide.show-fig .backtext { display: block; flex: none; width: 100%; margin-top: 8px; border-color: var(--accent); color: var(--accent); font-size: 15px; padding: 9px; } }

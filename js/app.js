@@ -290,6 +290,8 @@
           show();
           var peek = BL.el('button', { class: 'btn peek' }, media.map(function (m) { return m.t.split(' ')[0]; }).join('') + ' ' + (media[0].kind === 'sim' ? '実験を動かす' : '図を見る') + ' →');
           peek.addEventListener('click', function () { showFig = true; sg.set(true); g.classList.add('show-fig'); }); t.appendChild(peek);
+          var backT = BL.el('button', { class: 'btn backtext' }, '← 説明にもどる');
+          backT.addEventListener('click', function () { showFig = false; sg.set(false); g.classList.remove('show-fig'); var mx = f.querySelector('.maxbtn'); if (f.classList.contains('is-max') && mx) mx.click(); t.scrollTop = 0; }); f.appendChild(backT);
         }
         next.textContent = k === N - 1 ? 'ポイントへ →' : '次へ →';
       } else if (k === N) {
