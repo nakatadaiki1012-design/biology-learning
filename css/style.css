@@ -585,3 +585,15 @@ body.has-max .toast { z-index: 95; }
 .see.is-max { display: grid !important; }
 .backtext { display: none; }
 @media (max-width: 760px) { .slide.show-fig .backtext { display: block; flex: none; width: 100%; margin-top: 8px; border-color: var(--accent); color: var(--accent); font-size: 15px; padding: 9px; } }
+
+/* ひとことで（画面のはじめの要約） */
+.sum { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); border: 1.5px solid var(--accent); border-radius: 8px; padding: 8px 12px; margin: 0 0 12px; font-weight: 700; }
+.sum::before { content: "💡 ひとことで"; display: block; font-size: .72em; color: var(--accent); letter-spacing: .04em; margin-bottom: 2px; }
+.steps { counter-reset: st; list-style: none; padding: 0; margin: 8px 0; }
+.steps > li { counter-increment: st; position: relative; padding: 4px 0 4px 34px; }
+.steps > li::before { content: counter(st); position: absolute; left: 0; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+.steps > li + li { border-top: 1px dashed var(--line); }
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.cmp > div { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--panel); }
+.cmp > div > b:first-child { display: block; color: var(--accent); }
+@media (max-width: 760px) { .cmp { grid-template-columns: 1fr; } }
