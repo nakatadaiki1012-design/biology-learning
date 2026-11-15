@@ -136,7 +136,7 @@
     card.innerHTML = '<div class="card-head"><div class="eyebrow">' + BL.SUBJ[sim.subj] + '・' + sim.cat + '</div><h2 class="name">' + sim.name + '</h2><p class="lead">' + sim.lead + '</p></div>';
     var tabs = BL.el('div', { class: 'tabs', role: 'tablist' }); card.appendChild(tabs);
     var body = BL.el('div', { class: 'body' }); card.appendChild(body);
-    var pTry = BL.el('div', { class: 'ctl' }), pHow = BL.el('div', { class: 'how' }, sim.how), pPts = BL.el('div');
+    var pTry = BL.el('div', { class: 'ctl' }), pHow = BL.el('div', { class: 'how' }, ((BL.SIM_SUMS || {})[sim.id] ? '<div class="sum">' + BL.SIM_SUMS[sim.id] + '</div>' : '') + sim.how), pPts = BL.el('div');
     var sph = (BL.PHOTOS || []).filter(function (p) { return (p.sims || []).indexOf(sim.id) >= 0; });
     if (sph.length) { pHow.appendChild(BL.el('h3', { class: 'sub' }, '📷 写真で見る')); pHow.appendChild(BL.photoView(sph)); }
     var ctl = BL.el('div', { class: 'ctl' }); pTry.appendChild(ctl);
